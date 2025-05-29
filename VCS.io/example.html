@@ -1,0 +1,281 @@
+<div id="exampleContent" class="tab-inner-content">
+    <article class="article-card">
+        <div class="p-6 sm:p-8 lg:p-10">
+            <section id="example" class="content-section fade-in-section">
+                <h2 class="text-center">How VCS Works: A Step-by-Step Example</h2>
+                <p class="mb-10 text-center text-slate-600">Follow the flow to see how VCS processes input texts to generate a comprehension score.</p>
+
+                <div class="space-y-6"> 
+                    <div class="text-center">
+                        <h3 class="flowchart-step-title"><i class="fas fa-file-alt mr-2"></i>1. Input Texts: Reference & Generated</h3>
+                    </div>
+                    <div class="flex flex-col md:flex-row justify-around items-stretch md:space-x-6 space-y-6 md:space-y-0">
+                        <div class="flowchart-block flowchart-block-text-io md:w-1/2">
+                            <h4 class="flowchart-title">Reference Text (T<sub>ref</sub>)</h4>
+                            <div class="text-preview-box">
+The old market bell rings, starting a busy market. Vendors open their bright stalls in the busy square, while the smell of fresh bread fills the air. A young seller shouts out good deals as curious people gather around. The steady ring of the bell sets the pace for the day. A wise old vendor stops by his stall, giving advice to those who pass by. As the market gets busy, the bell rings again at midday, reminding everyone of the community spirit. A light rain briefly slows the crowd, but everyone's spirit stays strong. Local storytellers tell simple tales that catch everyone's attention. As evening comes, the old bell rings one last time, perfectly echoing the start of the day.
+                            </div>
+                        </div>
+                        <div class="flowchart-block flowchart-block-text-io md:w-1/2">
+                            <h4 class="flowchart-title">Generated Text (T<sub>gen</sub>)</h4>
+                            <div class="text-preview-box">
+The old town bell rings, signaling the start of a busy market. Stalls come alive as vendors set up their goods in the busy square, and the smell of fresh baked goods fills the morning air. A lively seller shouts out good deals to attract a curious crowd. A happy child runs after a flying kite among the stalls, adding a fun touch to the scene. An eager artist quickly draws the lively scene, adding a creative touch. A short rain briefly stops the flow, but the market soon gets moving again. A lively musician starts playing a song that grabs the attention of a nearby group. As the market gets at its busiest, the bell rings again at midday, refreshing the crowd with its familiar sound. As dusk comes, the old bell rings once more, echoing the busy start of the market.
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="connector-wrapper flex flex-col items-center">
+                        <div class="flex w-full max-w-xl"> <div class="w-1/2 flex justify-center"><div class="connector-line w-0.5 h-6"></div></div>
+                            <div class="w-1/2 flex justify-center"><div class="connector-line w-0.5 h-6"></div></div>
+                        </div>
+                        <div class="connector-line h-0.5 w-1/2 md:w-1/4 my-[-1px] relative z-0"></div> <div class="connector-line w-0.5 h-6 relative z-0"></div> <div class="connector-arrow connector-arrow-styled"><i class="fas fa-arrow-down"></i></div>
+                    </div>
+                    
+                    <div class="text-center">
+                        <h3 class="flowchart-step-title"><i class="fas fa-cogs mr-2"></i>2. Processing via VCS API</h3>
+                    </div>
+                    <div class="flex justify-center">
+                        <div class="flowchart-block flowchart-block-api"> 
+                            <h4 class="flowchart-title">compute_vcs_score API Call</h4>
+                            <div class="api-signature-block">
+                                <code>compute_vcs_score(</code><br>
+                                <code>&nbsp;&nbsp;&nbsp;&nbsp;<span class="param-name">reference_text</span>: <span class="param-type">str</span>,</code><br>
+                                <code>&nbsp;&nbsp;&nbsp;&nbsp;<span class="param-name">generated_text</span>: <span class="param-type">str</span>,</code><br>
+                                <code>&nbsp;&nbsp;&nbsp;&nbsp;<span class="param-name">segmenter_fn</span>,</code><br>
+                                <code>&nbsp;&nbsp;&nbsp;&nbsp;<span class="param-name">embedding_fn_las</span>,</code><br>
+                                <code>&nbsp;&nbsp;&nbsp;&nbsp;<span class="param-name">embedding_fn_gas</span> = <span class="default-val">None</span>,</code><br>
+                                <code>&nbsp;&nbsp;&nbsp;&nbsp;<span class="param-name">chunk_size</span>: <span class="param-type">int</span> = <span class="default-val">1</span>,</code><br>
+                                <code>&nbsp;&nbsp;&nbsp;&nbsp;<span class="param-name">context_cutoff_value</span>: <span class="param-type">float</span> = <span class="default-val">0.6</span>,</code><br>
+                                <code>&nbsp;&nbsp;&nbsp;&nbsp;<span class="param-name">context_window_control</span>: <span class="param-type">float</span> = <span class="default-val">4.0</span>,</code><br>
+                                <code>&nbsp;&nbsp;&nbsp;&nbsp;<span class="param-name">lct</span>: <span class="param-type">int</span> = <span class="default-val">1</span>,</code><br>
+                                <code>&nbsp;&nbsp;&nbsp;&nbsp;<span class="param-name">return_all_metrics</span>: <span class="param-type">bool</span> = <span class="default-val">False</span>,</code><br>
+                                <code>&nbsp;&nbsp;&nbsp;&nbsp;<span class="param-name">return_internals</span>: <span class="param-type">bool</span> = <span class="default-val">False</span></code><br>
+                                <code>)</code>
+                            </div>
+                            <p class="flowchart-text-sm mt-3">The input texts are passed to the core VCS function along with configuration parameters.</p>
+                        </div>
+                    </div>
+
+                    <div class="connector-wrapper flex flex-col items-center">
+                        <div class="connector-line w-0.5 h-6"></div>
+                        <div class="connector-arrow connector-arrow-styled"><i class="fas fa-arrow-down"></i></div>
+                        <div class="connector-line w-0.5 h-6"></div> 
+                        <div class="connector-line h-0.5 w-full max-w-2xl my-[-1px] relative z-0"></div> <div class="flex w-full max-w-2xl"> <div class="w-1/2 flex flex-col items-center">
+                                <div class="connector-line w-0.5 h-6"></div>
+                                <div class="connector-arrow connector-arrow-styled"><i class="fas fa-arrow-down"></i></div>
+                            </div>
+                            <div class="w-1/2 flex flex-col items-center">
+                                <div class="connector-line w-0.5 h-6"></div>
+                                <div class="connector-arrow connector-arrow-styled"><i class="fas fa-arrow-down"></i></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="text-center">
+                        <h3 class="flowchart-step-title"><i class="fas fa-sitemap mr-2"></i>3. Internal Processing Steps</h3>
+                    </div>
+                    <div class="flex flex-col md:flex-row justify-around items-stretch md:space-x-6 space-y-6 md:space-y-0">
+                        <div class="flowchart-block flowchart-block-process md:w-2/5">
+                            <h4 class="flowchart-title mb-2"><i class="fas fa-globe-americas mr-2"></i>Figure A: Global Alignment (GAS)</h4>
+                            <figure class="video-figure-container">
+                                <div class="video-placeholder">
+                                    <video autoplay muted loop playsinline>
+                                        <source src="videos/metrics/gas/gas.mp4" type="video/mp4">
+                                        Your browser does not support the video tag.
+                                    </video>
+                                </div>
+                            </figure>
+                            <figcaption class="video-caption">Overall thematic similarity using full-text embeddings. Corresponds to Equation (1) in the paper.</figcaption>
+                        </div>
+                        <div class="flowchart-block flowchart-block-process md:w-2/5">
+                            <h4 class="flowchart-title mb-2"><i class="fas fa-tasks mr-2"></i>Figure B: Preprocessing & Segmentation</h4>
+                             <figure class="video-figure-container">
+                                <div class="video-placeholder">
+                                    <video autoplay muted loop playsinline>
+                                        <source src="videos/segmenting/segmenting.mp4" type="video/mp4"> 
+                                        Your browser does not support the video tag.
+                                    </video>
+                                </div>
+                            </figure>
+                            <figcaption class="video-caption">Texts are cleaned, segmented (SaT), and chunked. See Section 3.1.2 for details.</figcaption>
+                        </div>
+                    </div>
+
+                    <div class="connector-wrapper flex flex-col items-center">
+                        <div class="flex w-full max-w-2xl"> <div class="w-1/2 flex justify-center"><div class="connector-line w-0.5 h-6"></div></div>
+                            <div class="w-1/2 flex justify-center"><div class="connector-line w-0.5 h-6"></div></div>
+                        </div>
+                        <div class="connector-line h-0.5 w-1/2 md:w-1/4 my-[-1px] relative z-0"></div> <div class="connector-line w-0.5 h-6 relative z-0"></div> <div class="connector-arrow connector-arrow-styled"><i class="fas fa-arrow-down"></i></div>
+                    </div>
+
+                    <div class="text-center">
+                        <h3 class="flowchart-step-title"><i class="fas fa-chalkboard-teacher mr-2"></i>4. Conceptual Detour: Mapping Windows (MW)</h3>
+                        <p class="text-slate-600 text-sm mb-4">Understanding how VCS aligns text segments of varying lengths and details. (Ref: Section 3.2.2)</p>
+                    </div>
+                    <div class="mapping-window-group-container">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-x-6 gap-y-6">
+                            <div class="flowchart-block flowchart-block-process">
+                                <h4 class="flowchart-title mb-2"><i class="fas fa-equals mr-1"></i>Figure C1: MW - Equal Length</h4>
+                                <figure class="video-figure-container">
+                                    <div class="video-placeholder">
+                                        <video autoplay muted loop playsinline>
+                                            <source src="videos/mapping window/case1.mp4" type="video/mp4"> 
+                                            Your browser does not support the video tag.
+                                        </video>
+                                    </div>
+                                </figure>
+                                <figcaption class="video-caption">Ideal 1-to-1 mapping when T<sub>ref</sub> and T<sub>gen</sub> have similar segment counts.</figcaption>
+                            </div>
+                            <div class="flowchart-block flowchart-block-process">
+                                <h4 class="flowchart-title mb-2"><i class="fas fa-compress-arrows-alt mr-1"></i>Figure C2: MW - Concise Gen.</h4>
+                                <figure class="video-figure-container">
+                                    <div class="video-placeholder">
+                                        <video autoplay muted loop playsinline>
+                                            <source src="videos/mapping window/case2.mp4" type="video/mp4"> 
+                                            Your browser does not support the video tag.
+                                        </video>
+                                    </div>
+                                </figure>
+                                <figcaption class="video-caption">T<sub>gen</sub> is shorter; mapping window adjusts for recall.</figcaption>
+                            </div>
+                            <div class="flowchart-block flowchart-block-process">
+                                <h4 class="flowchart-title mb-2"><i class="fas fa-expand-arrows-alt mr-1"></i>Figure C3: MW - Verbose Gen.</h4>
+                                 <figure class="video-figure-container">
+                                    <div class="video-placeholder">
+                                        <video autoplay muted loop playsinline>
+                                            <source src="videos/mapping window/case3.mp4" type="video/mp4"> 
+                                            Your browser does not support the video tag.
+                                        </video>
+                                    </div>
+                                </figure>
+                                <figcaption class="video-caption">T<sub>gen</sub> is longer; mapping window adjusts for precision.</figcaption>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="connector-wrapper flex flex-col items-center">
+                        <div class="connector-line w-0.5 h-6"></div>
+                        <div class="connector-arrow connector-arrow-styled"><i class="fas fa-arrow-down"></i></div>
+                    </div>
+
+                    <div class="text-center">
+                        <h3 class="flowchart-step-title"><i class="fas fa-calculator mr-2"></i>5. Core Score Calculation Components</h3>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-x-6 gap-y-6 md:items-start">
+                        <div class="flowchart-block flowchart-block-process">
+                            <h4 class="flowchart-title mb-2"><i class="fas fa-people-arrows mr-2"></i>Figure D: Best Matching</h4>
+                            <figure class="video-figure-container">
+                                <div class="video-placeholder">
+                                    <video autoplay muted loop playsinline>
+                                        <source src="videos/best matching/matching.mp4" type="video/mp4"> 
+                                        Your browser does not support the video tag.
+                                    </video>
+                                </div>
+                            </figure>
+                            <figcaption class="video-caption">Establishes robust one-to-one chunk correspondences. (Ref: Section 3.2.2)</figcaption>
+                        </div>
+                        <div class="flowchart-block flowchart-block-process">
+                            <h4 class="flowchart-title mb-2"><i class="fas fa-th-list mr-2"></i>Figure E: Local Alignment (LAS)</h4>
+                            <figure class="video-figure-container">
+                                <div class="video-placeholder">
+                                    <video autoplay muted loop playsinline>
+                                        <source src="videos/metrics/las/las.mp4" type="video/mp4"> 
+                                        Your browser does not support the video tag.
+                                    </video>
+                                </div>
+                            </figure>
+                            <figcaption class="video-caption">Assesses fine-grained semantic quality of matched chunks. (Ref: Eq. 2)</figcaption>
+                        </div>
+                        <div class="flowchart-block flowchart-block-process">
+                            <h4 class="flowchart-title mb-2"><i class="fas fa-ruler-combined mr-2"></i>Figure F: Distance NAS (NAS-D)</h4>
+                            <figure class="video-figure-container">
+                                <div class="video-placeholder">
+                                    <video autoplay muted loop playsinline>
+                                        <source src="videos/metrics/nas/nas-d/nas-d.mp4" type="video/mp4"> 
+                                        Your browser does not support the video tag.
+                                    </video>
+                                </div>
+                            </figure>
+                            <figcaption class="video-caption">Penalizes deviations of matched elements from expected positions. (Ref: Eq. 3, 4)</figcaption>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-x-6 mt-1 mb-1">
+                        <div class="flex justify-center">
+                            <div class="connector-wrapper !my-2"> <div class="connector-line w-0.5 h-6"></div>
+                                <div class="connector-arrow connector-arrow-styled"><i class="fas fa-arrow-down"></i></div>
+                            </div>
+                        </div>
+                        <div class="flex justify-center">
+                            <div class="connector-wrapper !my-2"> <div class="connector-line w-0.5 h-6"></div>
+                                <div class="connector-arrow connector-arrow-styled"><i class="fas fa-arrow-down"></i></div>
+                            </div>
+                        </div>
+                        <div class="flex justify-center">
+                            <div class="connector-wrapper !my-2"> <div class="connector-line w-0.5 h-6"></div>
+                                <div class="connector-arrow connector-arrow-styled"><i class="fas fa-arrow-down"></i></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-x-6 md:items-stretch">
+                        <div class="md:col-span-2 flowchart-block flowchart-block-process flex flex-col">
+                            <h4 class="flowchart-title mb-2"><i class="fas fa-video mr-2"></i>Figure I: Final VCS Score Video</h4>
+                            <figure class="video-figure-container flex-grow">
+                                <div class="video-placeholder h-full">
+                                    <video autoplay muted loop playsinline>
+                                        <source src="videos/vcs/vcs.mp4" type="video/mp4"> 
+                                        Your browser does not support the video tag.
+                                    </video>
+                                </div>
+                            </figure>
+                            <figcaption class="video-caption">This video illustrates the final score calculation, combining semantic and narrative alignments to provide a comprehensive measure of video understanding. It shows how GAS, LAS, and NAS contribute to the overall VCS.</figcaption>
+                        </div>
+
+                        <div class="space-y-0 flex flex-col justify-between">
+                            <div class="flowchart-block flowchart-block-process flowchart-block-nas-vertical">
+                                <h4 class="flowchart-title mb-2"><i class="fas fa-wave-square mr-2"></i>Figure G: Line NAS (NAS-L)</h4>
+                                <figure class="video-figure-container">
+                                    <div class="video-placeholder">
+                                        <video autoplay muted loop playsinline>
+                                            <source src="videos/metrics/nas/nas-l/nas-l.mp4" type="video/mp4"> 
+                                            Your browser does not support the video tag.
+                                        </video>
+                                    </div>
+                                </figure>
+                                <figcaption class="video-caption">Evaluates local chronological flow of matched elements. (Ref: Eq. 5, 6)</figcaption>
+                            </div>
+                            <div class="connector-wrapper flex flex-col items-center nas-vertical-connector my-2"> 
+                                <div class="connector-line w-0.5 h-6"></div>
+                                <div class="connector-arrow connector-arrow-styled"><i class="fas fa-arrow-down"></i></div>
+                            </div>
+                            <div class="flowchart-block flowchart-block-process flowchart-block-nas-vertical">
+                                <h4 class="flowchart-title mb-2"><i class="fas fa-window-maximize mr-2"></i>Figure H: Window Regularizer (R<sub>W</sub>)</h4>
+                                <figure class="video-figure-container">
+                                    <div class="video-placeholder">
+                                        <video autoplay muted loop playsinline>
+                                            <source src="videos/metrics/nas/window-regularizer/Rw.mp4" type="video/mp4"> 
+                                            Your browser does not support the video tag.
+                                        </video>
+                                    </div>
+                                </figure>
+                                <figcaption class="video-caption">Adjusts NAS for extreme text length disparities. (Ref: Eq. 8, 9)</figcaption>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="connector-wrapper flex justify-center mt-8">
+                        <div class="connector-arrow-styled bg-slate-200 shadow">
+                            <i class="fas fa-ellipsis-h text-slate-500"></i> 
+                        </div>
+                    </div>
+                    <div class="text-center">
+                        <h3 class="flowchart-step-title"><i class="fas fa-trophy mr-2"></i>6. Final Score Aggregation...</h3>
+                         <p class="text-slate-500 italic pb-4">(Combining SAS and NAS<sub>reg</sub> for the final VCS score.)</p>
+                    </div>
+                </div> 
+            </section>
+        </div>
+    </article>
+</div>

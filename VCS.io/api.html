@@ -1,0 +1,141 @@
+<div id="apiContent" class="tab-inner-content"> <article class="article-card">
+        <div class="p-6 sm:p-8 lg:p-10">
+             <section id="api" class="content-section fade-in-section">
+                <h2>API Document</h2>
+                <p class="mb-6">Detailed information about the VCS library API. This section is intended for developers looking to integrate VCS into their own evaluation pipelines.</p>
+
+                <div class="flex flex-col md:flex-row md:space-x-6">
+                    <div class="md:w-1/3 pane-content p-4 border border-slate-200 rounded-lg shadow bg-white mb-6 md:mb-0">
+                        <h3 class="text-xl font-semibold text-slate-700 mb-4 border-b pb-2">API Sections</h3>
+                        <ul id="apiNavMenu" class="space-y-1">
+                            <li><a href="#apiGettingStarted" class="api-nav-link text-teal-600 hover:text-teal-800 hover:bg-teal-50">Getting Started</a></li>
+                            <li><a href="#apiEndpoints" class="api-nav-link text-teal-600 hover:text-teal-800 hover:bg-teal-50">Endpoints</a></li>
+                            <li><a href="#apiRateLimits" class="api-nav-link text-teal-600 hover:text-teal-800 hover:bg-teal-50">Rate Limits</a></li>
+                            <li><a href="#apiAuthentication" class="api-nav-link text-teal-600 hover:text-teal-800 hover:bg-teal-50">Authentication</a></li>
+                            <li><a href="#apiErrorCodes" class="api-nav-link text-teal-600 hover:text-teal-800 hover:bg-teal-50">Error Codes</a></li>
+                        </ul>
+                        <div class="mt-8 enhanced-placeholder h-auto py-8">
+                            <i class="fas fa-cogs text-4xl"></i>
+                            <p class="font-semibold text-lg mt-3">VCS API Engine</p>
+                            <p class="text-sm mt-1 text-teal-700">Power your evaluations.</p>
+                        </div>
+                    </div>
+
+                    <div id="apiRightPane" class="md:w-2/3 pane-content p-4 border border-slate-200 rounded-lg shadow bg-slate-50 overflow-y-auto" style="max-height: 80vh;">
+                        <div id="apiGettingStarted" class="api-section-content mb-8 content-section"> <h3 class="text-xl font-semibold text-slate-700 mb-3">Getting Started</h3>
+                            <p>Welcome to the VCS API! This guide will help you make your first API call. To begin, you'll need to obtain an API key from your dashboard. Once you have your key, you can start making requests to our endpoints.</p>
+                            <h4>Installation (Conceptual Python Client)</h4>
+                            <pre class="bg-slate-800 text-slate-200 p-3 rounded-md text-xs sm:text-sm my-3 overflow-x-auto"><code>pip install vcs-client</code></pre>
+                            <h4>Basic Usage</h4>
+                            <pre class="bg-slate-800 text-slate-200 p-3 rounded-md text-xs sm:text-sm my-3 overflow-x-auto"><code>from vcs_client import VCSClient
+
+# Initialize client with your API key
+client = VCSClient(api_key="YOUR_API_KEY")
+
+reference = "The sun sets over the mountains, painting the sky in hues of orange and purple."
+generated = "As evening approached, the mountains were silhouetted against a fiery sky."
+
+try:
+    scores = client.calculate_vcs(reference_text=reference, generated_text=generated)
+    print(f"VCS Score: {scores.vcs_score}")
+    print(f"GAS: {scores.gas_score}, LAS: {scores.las_score}, NAS: {scores.nas_score}")
+except Exception as e:
+    print(f"Error: {e}")</code></pre>
+                            <p>Ensure your development environment is set up with necessary HTTP client libraries if you are not using a dedicated client library.</p>
+                        </div>
+                        <hr class="my-8 border-slate-300">
+                        <div id="apiEndpoints" class="api-section-content mb-8 content-section">
+                            <h3 class="text-xl font-semibold text-slate-700 mb-3">Endpoints</h3>
+                            <h4 class="text-lg font-medium text-slate-600 mt-4 mb-2"><code>POST /v1/calculate</code></h4>
+                            <p>Calculates the full Video Comprehension Score (VCS) along with its sub-components (GAS, LAS, NAS) based on a reference text and a generated text.</p>
+                            <ul class="list-disc list-inside my-2 space-y-1 pl-2 text-sm">
+                                <li><strong>Method:</strong> POST</li>
+                                <li><strong>URL:</strong> <code>https://api.vcs-metric.com/v1/calculate</code></li>
+                                <li><strong>Content-Type:</strong> <code>application/json</code></li>
+                                <li><strong>Authentication:</strong> Required (Bearer Token)</li>
+                            </ul>
+                            <p class="text-sm font-semibold mt-3">Request Body:</p>
+                            <pre class="bg-slate-800 text-slate-200 p-3 rounded-md text-xs sm:text-sm my-2 overflow-x-auto"><code>{
+  "reference_text": "The quick brown fox jumps over the lazy dog. It then finds a comfortable spot to nap.",
+  "generated_text": "A fast brown fox leaped above the tired canine. Afterwards, it located a cozy place for a snooze.",
+  "config": { 
+    "language": "en",
+    "embedding_model": "default_transformer_v2",
+    "local_chronology_tolerance": 0.1 
+  }
+}</code></pre>
+                            <p class="text-sm font-semibold mt-3">Response (200 OK):</p>
+                            <pre class="bg-slate-800 text-slate-200 p-3 rounded-md text-xs sm:text-sm my-2 overflow-x-auto"><code>{
+  "vcs_score": 0.873,
+  "gas_score": 0.915,
+  "las_score": 0.820,
+  "nas_score": 0.891,
+  "components": {
+    "sas_score": 0.850,
+    "nas_d_score": 0.900,
+    "nas_l_score": 0.880
+  },
+  "processing_time_ms": 120,
+  "request_id": "req_abc123xyz789"
+}</code></pre>
+                        </div>
+                         <hr class="my-8 border-slate-300">
+                        <div id="apiRateLimits" class="api-section-content mb-8 content-section">
+                            <h3 class="text-xl font-semibold text-slate-700 mb-3">Rate Limits</h3>
+                            <p>To ensure fair usage and stability of the service, API requests are rate-limited. The current limits are typically:</p>
+                            <ul class="list-disc list-inside my-2 space-y-1 pl-2 text-sm">
+                                <li>Standard Tier: 100 requests per minute per API key.</li>
+                                <li>Standard Tier: 5,000 requests per day per API key.</li>
+                                <li>Premium Tiers: Higher limits available (contact sales for more information).</li>
+                            </ul>
+                            <p class="text-sm">Exceeding these limits will result in a <code>429 Too Many Requests</code> error. Check the <code>Retry-After</code> header (in seconds) or <code>X-RateLimit-Reset</code> header (UTC timestamp in seconds) for when you can retry. Consistent abuse may lead to temporary key suspension.</p>
+                            <p class="text-sm mt-2">Relevant response headers:</p>
+                            <ul class="list-disc list-inside my-2 space-y-1 pl-2 text-xs">
+                                <li><code>X-RateLimit-Limit</code>: The rate limit ceiling for the current request window.</li>
+                                <li><code>X-RateLimit-Remaining</code>: The number of requests remaining in the current window.</li>
+                                <li><code>X-RateLimit-Reset</code>: The time at which the current rate limit window resets (UTC epoch seconds).</li>
+                            </ul>
+                        </div>
+                        <hr class="my-8 border-slate-300">
+                        <div id="apiAuthentication" class="api-section-content mb-8 content-section">
+                            <h3 class="text-xl font-semibold text-slate-700 mb-3">Authentication</h3>
+                            <p>All API requests must be authenticated using an API key. Pass your API key as a Bearer token in the <code>Authorization</code> header.</p>
+                            <pre class="bg-slate-800 text-slate-200 p-3 rounded-md text-xs sm:text-sm my-3 overflow-x-auto"><code>Authorization: Bearer YOUR_API_KEY</code></pre>
+                            <p>Example using <code>curl</code>:</p>
+                            <pre class="bg-slate-800 text-slate-200 p-3 rounded-md text-xs sm:text-sm my-3 overflow-x-auto"><code>curl -X POST https://api.vcs-metric.com/v1/calculate \\
+     -H "Authorization: Bearer YOUR_API_KEY" \\
+     -H "Content-Type: application/json" \\
+     -d '{
+           "reference_text": "Example reference.",
+           "generated_text": "Example generated."
+         }'</code></pre>
+                            <p>Keep your API key secure and do not expose it in client-side code or public repositories.</p>
+                        </div>
+                        <hr class="my-8 border-slate-300">
+                        <div id="apiErrorCodes" class="api-section-content content-section">
+                            <h3 class="text-xl font-semibold text-slate-700 mb-3">Error Codes</h3>
+                            <p>The API uses standard HTTP status codes to indicate the success or failure of a request. Here are some common error codes:</p>
+                            <ul class="list-disc list-inside my-2 space-y-1 pl-2 text-sm">
+                                <li><code>400 Bad Request</code>: The request was malformed, or contained invalid parameters. The response body will often include a more specific error message.</li>
+                                <li><code>401 Unauthorized</code>: Missing or invalid API key. Ensure your <code>Authorization</code> header is correctly formatted and your key is active.</li>
+                                <li><code>403 Forbidden</code>: You do not have permission to access this resource, or your API key does not have the required scopes.</li>
+                                <li><code>429 Too Many Requests</code>: You have exceeded your API rate limit. Check the <code>Retry-After</code> or <code>X-RateLimit-Reset</code> headers.</li>
+                                <li><code>500 Internal Server Error</code>: An unexpected error occurred on our servers. Please try again later. If the problem persists, contact support.</li>
+                                <li><code>503 Service Unavailable</code>: The service is temporarily unavailable, usually due to maintenance or overload. Try again after a short delay.</li>
+                            </ul>
+                            <p class="text-sm font-semibold mt-3">Example Error Response (400 Bad Request):</p>
+                            <pre class="bg-slate-800 text-slate-200 p-3 rounded-md text-xs sm:text-sm my-2 overflow-x-auto"><code>{
+  "error": {
+    "type": "invalid_request_error",
+    "message": "Missing required parameter: reference_text",
+    "param": "reference_text",
+    "request_id": "req_def456uvw012"
+  }
+}</code></pre>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </article>
+</div>

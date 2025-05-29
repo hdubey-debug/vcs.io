@@ -1,0 +1,1134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Line NAS (Precision/Recall F1) Demo</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f2f5;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            padding: 16px;
+            overflow-x: hidden;
+        }
+        .main-title {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 16px;
+            text-align: center;
+        }
+        /* Updated app-container to use CSS Grid */
+        .app-container {
+            display: grid;
+            /* Defines 2 columns; items will flow into these columns, creating implicit rows */
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); 
+            /* Rows will size automatically based on content, ensuring items in the same conceptual row have the same height */
+            gap: 20px; 
+            width: 100%;
+            max-width: 1300px; 
+        }
+        /* All direct children of .app-container are grid items */
+
+        .chart-card { 
+            background-color: #ffffff; 
+            border-radius: 12px; 
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06); 
+            padding: 16px; 
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            padding-bottom: 80px; 
+            width: 100%; 
+            height: 100%; /* Stretches to fill grid cell height */
+        }
+        .chart-title-text {
+            font-size: 1.125rem; 
+            font-weight: 600; 
+            color: #374151; 
+            margin-bottom: 12px; 
+            text-align: center;
+            height: 30px;
+        }
+        .axis-title-y {
+            position: absolute;
+            left: -35px; 
+            top: calc(50% - 20px); 
+            transform: translateY(-50%) rotate(-90deg);
+            font-weight: 600; color: #374151; font-size: 0.8rem; white-space: nowrap;
+        }
+        .axis-title-x {
+            position: absolute;
+            bottom: 55px; 
+            left: 50%;
+            transform: translateX(-50%);
+            font-weight: 600; color: #374151; font-size: 0.8rem;
+        }
+        .chart-container-wrapper {
+            position: relative;
+            width: 100%;
+            max-width: 400px; 
+            margin: 0 auto;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 1 / 1;
+            background-color: #f8fafc; 
+            border-radius: 8px; 
+            box-shadow: inset 0 2px 4px 0 rgba(0,0,0,0.05);
+            padding: 0;
+            border: 1px solid #e2e8f0; 
+            overflow: hidden;
+        }
+        .axis-label {
+            position: absolute;
+            font-size: 0.65rem; color: #64748b; font-weight: 400;
+            white-space: nowrap; z-index: 20;
+        }
+        .ideal-mapping-window {
+            position: absolute;
+            border: 1px solid #34d399; background-color: rgba(52, 211, 153, 0.1);
+            box-sizing: border-box; z-index: 0; transition: all 0.2s ease-out;
+        }
+        .chart-metrics {
+            margin-top: 12px; font-size: 0.75rem; color: #4b5563;
+            width: 100%; max-width: 400px;
+            display: grid; grid-template-columns: repeat(2, 1fr);
+            gap: 4px 8px; padding: 0 10px;
+            position: absolute; bottom: 5px; left: 50%; transform: translateX(-50%);
+        }
+        .chart-metrics div { display: flex; justify-content: space-between; }
+        .chart-metrics span:last-child { font-weight: 600; color: #1e293b; }
+
+        .card-container {
+            background-color: #ffffff; padding: 16px; border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
+            display: flex; flex-direction: column; align-items: center; gap: 12px;
+            width: 100%; 
+            height: 100%; /* Stretches to fill grid cell height */
+        }
+        .container-title-wrapper {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            border-bottom: 1px solid #e2e8f0; 
+            padding-bottom: 8px; 
+            margin-bottom: 8px;
+        }
+        .container-title {
+            font-size: 1rem; font-weight: 600; color: #1e293b;
+        }
+        .reset-button {
+            background-color: #e0e7ff; 
+            color: #4338ca; 
+            padding: 4px 8px; 
+            border-radius: 6px; 
+            font-size: 0.75rem; 
+            font-weight: 500; 
+            cursor: pointer;
+            transition: background-color 0.2s;
+            border: 1px solid #c7d2fe; 
+        }
+        .reset-button:hover {
+            background-color: #c7d2fe; 
+        }
+        .reset-button svg {
+            width: 0.875rem; 
+            height: 0.875rem; 
+            display: inline-block;
+            vertical-align: middle;
+            margin-right: 4px;
+        }
+        
+        .lct-control-card { /* Specific styling for LCT card if needed, inherits .card-container */
+             min-height: 80px; /* Ensure a minimum height, can be adjusted */
+        }
+        .lct-control-card .container-title-wrapper { margin-bottom: 4px; padding-bottom: 4px;}
+        .lct-horizontal-layout {
+            display: flex;
+            align-items: center;
+            gap: 10px; 
+            width: 100%;
+            padding: 4px 0; 
+        }
+        .lct-horizontal-layout label {
+            font-weight: 500; color: #4b5563; font-size: 0.875rem;
+            flex-shrink: 0; 
+        }
+        .lct-horizontal-layout input[type="range"] {
+            flex-grow: 1; 
+            height: 6px; background: #e2e8f0; border-radius: 9999px;
+            outline: none; opacity: 0.9; transition: opacity .15s ease-in-out;
+             -webkit-appearance: none; appearance: none;
+        }
+        .lct-horizontal-layout input[type="range"]:hover { opacity: 1; }
+        .lct-horizontal-layout input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none; appearance: none; width: 16px; height: 16px;
+            background: #3b82f6; border-radius: 50%; cursor: pointer;
+            border: 2px solid #ffffff; box-shadow: 0 1px 3px 0 rgba(0,0,0,0.1);
+        }
+        .lct-horizontal-layout input[type="range"]::-moz-range-thumb {
+            width: 16px; height: 16px; background: #3b82f6; border-radius: 50%;
+            cursor: pointer; border: 2px solid #ffffff; box-shadow: 0 1px 3px 0 rgba(0,0,0,0.1);
+        }
+        .lct-horizontal-layout .lct-value-display {
+            font-weight: 600; color: #1d4ed8; font-size: 0.9rem;
+            background-color: #e0e7ff; padding: 3px 7px; border-radius: 6px;
+            flex-shrink: 0;
+        }
+
+        .overall-scores-card { /* Specific styling for Scores card, inherits .card-container */
+            min-height: 80px; /* Ensure a minimum height, matching LCT card */
+        }
+        .overall-scores-card .container-title-wrapper { margin-bottom: 4px; padding-bottom: 4px;}
+        .scores-horizontal-layout {
+            display: flex;
+            flex-wrap: wrap; 
+            justify-content: space-around; 
+            align-items: center;
+            gap: 10px 15px; 
+            width: 100%;
+            padding: 4px 0; 
+        }
+        .scores-horizontal-layout .info-item {
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            text-align: center;
+            font-size: 0.8rem; 
+            min-width: 100px; 
+        }
+        .scores-horizontal-layout .info-item span:first-child { color: #374151; font-weight: 500; }
+        .scores-horizontal-layout .info-item span:last-child { font-weight: 700; font-size: 0.9rem; }
+        .scores-horizontal-layout .info-item .line-nas-f1 { color: #1d4ed8; font-size: 1rem; }
+
+        .segment-list-card { 
+            /* Uses .card-container styles */
+            /* The height: 100% from .card-container will make it fill its grid row */
+        }
+        .segment-list { 
+            /* flex-grow: 1; /* Not strictly needed if card itself manages height via grid */
+            overflow-y: visible; /* Changed from auto to ensure no internal scroll */
+            padding-right: 6px; 
+            width:100%; 
+            /* Removed max-height */
+        }
+        .segment-list h3 { font-size: 0.9rem; font-weight: 600; color: #374151; margin-bottom: 4px; }
+        .segment-list ul { list-style-type: none; padding-left: 0; }
+        .segment-list ul li {
+            margin-bottom: 4px; line-height: 1.4; 
+            font-size: 0.75rem; color: #4b5563;
+            padding: 6px 8px; 
+            border-radius: 4px; cursor: grab; 
+            transition: background-color 0.2s, opacity 0.2s; border: 1px solid #e5e7eb;
+            word-break: break-word; 
+            user-select: none; 
+        }
+        .segment-list ul li:hover { background-color: #eef2ff; }
+        .segment-list ul li.inactive-chunk {
+            text-decoration: line-through; color: #9ca3af; background-color: #f3f4f6;
+            cursor: pointer; 
+        }
+        .segment-list ul li.inactive-chunk:hover { background-color: #e5e7eb; }
+        .segment-list ul li.dragging {
+            opacity: 0.5;
+            background-color: #c7d2fe !important; 
+            cursor: grabbing;
+        }
+        .drag-placeholder {
+            height: 2.5em; 
+            background-color: #e0e7ff; 
+            border: 2px dashed #a5b4fc;
+            margin-bottom: 4px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            color: #64748b;
+        }
+
+        .ideal-paths-svg, .actual-path-svg {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none;
+        }
+        .ideal-paths-svg { z-index: 1; }
+        .actual-path-svg { z-index: 2; }
+        .floor-path-line { stroke: #0ea5e9; stroke-width: 1.5px; fill: none; }
+        .ceil-path-line { stroke: #ec4899; stroke-width: 1.5px; fill: none; }
+        .actual-path-line { stroke: #8b5cf6; stroke-width: 2px; fill: none; }
+        .path-marker-circle { r: 2.5px; stroke-width: 1px; }
+        
+        .legend-container {
+            margin-top: 10px; display: flex; flex-wrap: wrap; justify-content: center;
+            gap: 8px 14px; font-size: 0.7rem; color: #374151; width: 100%;
+            padding: 0 8px;
+        }
+        .legend-item { display: flex; align-items: center; gap: 5px; }
+        .legend-color-box { width: 10px; height: 10px; border-radius: 2px; }
+        .legend-line-sample { width: 15px; height: 1.5px; border-radius: 1px; }
+
+    </style>
+</head>
+<body>
+    <h1 class="main-title">Interactive Line NAS (F1 Score) Demo</h1>
+
+    <div class="app-container">
+        <div class="card-container lct-control-card">
+            <div class="container-title-wrapper"><span class="container-title">Controls</span></div>
+            <div class="lct-horizontal-layout">
+                <label for="lctSlider">LCT Parameter:</label>
+                <input type="range" id="lctSlider" min="0" max="5" value="0" step="1">
+                <span id="lctValueDisplay" class="lct-value-display">0</span>
+            </div>
+        </div>
+
+        <div class="card-container overall-scores-card">
+             <div class="container-title-wrapper"><span class="container-title">Overall Score</span></div>
+            <div class="scores-horizontal-layout">
+                <div class="info-item"><span>Precision NAS:</span> <span id="overallPrecisionNas">0.000</span></div>
+                <div class="info-item"><span>Recall NAS:</span> <span id="overallRecallNas">0.000</span></div>
+                <div class="info-item">
+                    <span class="font-bold">Line NAS (F1):</span>
+                    <span id="f1LineNasValue" class="line-nas-f1">0.000</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="chart-card">
+            <h2 class="chart-title-text">Precision Line NAS (Gen → Ref)</h2>
+            <div class="chart-container-wrapper">
+                <div class="axis-title-y">Reference Chunks</div>
+                <div class="chart-container" id="precisionChartGrid">
+                    <svg class="ideal-paths-svg" id="precisionIdealPathsSvg"></svg>
+                    <svg class="actual-path-svg" id="precisionActualPathSvg"></svg>
+                    <div id="precisionIdealMappingContainer" style="position: absolute; width:100%; height:100%; top:0; left:0; z-index:0;"></div>
+                    <div id="precisionAxisLabelContainerY" style="position: absolute; width:100%; height:100%; top:0; left:0;"></div>
+                    <div id="precisionAxisLabelContainerX" style="position: absolute; width:100%; height:100%; top:0; left:0;"></div>
+                </div>
+                <div class="axis-title-x">Generated Chunks</div>
+                <div class="chart-metrics" id="precisionChartMetrics">
+                    <div><span>Floor Len:</span><span id="precisionFloorLength">0.00</span></div>
+                    <div><span>Actual Len:</span><span id="precisionActualLength">0.00</span></div>
+                    <div><span>Ceil Len:</span><span id="precisionCeilLength">0.00</span></div>
+                    <div><span>Precision NAS:</span><span id="precisionLineNasScore">0.000</span></div>
+                </div>
+            </div>
+            <div class="legend-container">
+                <div class="legend-item"><div class="legend-color-box" style="background-color: rgba(52, 211, 153, 0.1); border: 1px solid #34d399;"></div>Ideal Window</div>
+                <div class="legend-item"><div class="legend-line-sample" style="background-color: #0ea5e9;"></div>Floor Path</div>
+                <div class="legend-item"><div class="legend-line-sample" style="background-color: #ec4899;"></div>Ceil Path</div>
+                <div class="legend-item"><div class="legend-line-sample" style="background-color: #8b5cf6;"></div>Actual Path</div>
+            </div>
+        </div>
+
+        <div class="chart-card">
+            <h2 class="chart-title-text">Recall Line NAS (Ref → Gen)</h2>
+            <div class="chart-container-wrapper">
+                <div class="axis-title-y">Generated Chunks</div>
+                <div class="chart-container" id="recallChartGrid">
+                    <svg class="ideal-paths-svg" id="recallIdealPathsSvg"></svg>
+                    <svg class="actual-path-svg" id="recallActualPathSvg"></svg>
+                    <div id="recallIdealMappingContainer" style="position: absolute; width:100%; height:100%; top:0; left:0; z-index:0;"></div>
+                    <div id="recallAxisLabelContainerY" style="position: absolute; width:100%; height:100%; top:0; left:0;"></div>
+                    <div id="recallAxisLabelContainerX" style="position: absolute; width:100%; height:100%; top:0; left:0;"></div>
+                </div>
+                <div class="axis-title-x">Reference Chunks</div>
+                <div class="chart-metrics" id="recallChartMetrics">
+                    <div><span>Floor Len:</span><span id="recallFloorLength">0.00</span></div>
+                    <div><span>Actual Len:</span><span id="recallActualLength">0.00</span></div>
+                    <div><span>Ceil Len:</span><span id="recallCeilLength">0.00</span></div>
+                    <div><span>Recall NAS:</span><span id="recallLineNasScore">0.000</span></div>
+                </div>
+            </div>
+            <div class="legend-container">
+                <div class="legend-item"><div class="legend-color-box" style="background-color: rgba(52, 211, 153, 0.1); border: 1px solid #34d399;"></div>Ideal Window</div>
+                <div class="legend-item"><div class="legend-line-sample" style="background-color: #0ea5e9;"></div>Floor Path</div>
+                <div class="legend-item"><div class="legend-line-sample" style="background-color: #ec4899;"></div>Ceil Path</div>
+                <div class="legend-item"><div class="legend-line-sample" style="background-color: #8b5cf6;"></div>Actual Path</div>
+            </div>
+        </div>
+        
+        <div class="card-container segment-list-card">
+            <div class="container-title-wrapper">
+                <span class="container-title">Generated Segments</span>
+                <button id="resetGenOrderBtn" class="reset-button" title="Reset Generated Segments Order">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" />
+                    </svg>
+                    Reset
+                </button>
+            </div>
+            <div class="segment-list" id="generatedSegments">
+                <h3>Gen Chunks (<span id="activeGenChunkCount">0</span>/<span id="totalGenChunkCount">0</span>)</h3>
+                <ul id="generatedSegmentsUl"></ul>
+            </div>
+        </div>
+
+        <div class="card-container segment-list-card">
+            <div class="container-title-wrapper">
+                <span class="container-title">Reference Segments</span>
+                 <button id="resetRefOrderBtn" class="reset-button" title="Reset Reference Segments Order">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" />
+                    </svg>
+                    Reset
+                </button>
+            </div>
+             <div class="segment-list" id="referenceSegments">
+                <h3>Ref Chunks (<span id="activeRefChunkCount">0</span>/<span id="totalRefChunkCount">0</span>)</h3>
+                <ul id="referenceSegmentsUl"></ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- DOM Element References ---
+        const lctSlider = document.getElementById('lctSlider');
+        const lctValueDisplay = document.getElementById('lctValueDisplay');
+        const resetGenOrderBtn = document.getElementById('resetGenOrderBtn');
+        const resetRefOrderBtn = document.getElementById('resetRefOrderBtn');
+
+        const precisionChartGrid = document.getElementById('precisionChartGrid');
+        const precisionIdealPathsSvg = document.getElementById('precisionIdealPathsSvg');
+        const precisionActualPathSvg = document.getElementById('precisionActualPathSvg');
+        const precisionIdealMappingContainer = document.getElementById('precisionIdealMappingContainer');
+        const precisionAxisLabelContainerX = document.getElementById('precisionAxisLabelContainerX');
+        const precisionAxisLabelContainerY = document.getElementById('precisionAxisLabelContainerY');
+        const precisionFloorLengthDisplay = document.getElementById('precisionFloorLength');
+        const precisionCeilLengthDisplay = document.getElementById('precisionCeilLength');
+        const precisionActualLengthDisplay = document.getElementById('precisionActualLength');
+        const precisionLineNasScoreDisplay = document.getElementById('precisionLineNasScore');
+
+        const recallChartGrid = document.getElementById('recallChartGrid');
+        const recallIdealPathsSvg = document.getElementById('recallIdealPathsSvg');
+        const recallActualPathSvg = document.getElementById('recallActualPathSvg');
+        const recallIdealMappingContainer = document.getElementById('recallIdealMappingContainer');
+        const recallAxisLabelContainerX = document.getElementById('recallAxisLabelContainerX');
+        const recallAxisLabelContainerY = document.getElementById('recallAxisLabelContainerY');
+        const recallFloorLengthDisplay = document.getElementById('recallFloorLength');
+        const recallCeilLengthDisplay = document.getElementById('recallCeilLength');
+        const recallActualLengthDisplay = document.getElementById('recallActualLength');
+        const recallLineNasScoreDisplay = document.getElementById('recallLineNasScore');
+
+        const referenceSegmentsUl = document.getElementById('referenceSegmentsUl'); 
+        const generatedSegmentsUl = document.getElementById('generatedSegmentsUl'); 
+        const activeRefChunkCountSpan = document.getElementById('activeRefChunkCount');
+        const totalRefChunkCountSpan = document.getElementById('totalRefChunkCount');
+        const activeGenChunkCountSpan = document.getElementById('activeGenChunkCount');
+        const totalGenChunkCountSpan = document.getElementById('totalGenChunkCount');
+
+        const overallPrecisionNasDisplay = document.getElementById('overallPrecisionNas');
+        const overallRecallNasDisplay = document.getElementById('overallRecallNas');
+        const f1LineNasValueDisplay = document.getElementById('f1LineNasValue');
+
+        const masterReferenceChunks = [
+            "The old market bell rings starting a busy market",
+            "Vendors open their bright stalls in the busy square while the smell of fresh bread fills the air",
+            "A young seller shouts out good deals as curious people gather around",
+            "The steady ring of the bell sets the pace for the day",
+            "A wise old vendor stops by his stall giving advice to those who pass by",
+            "As the market gets busy the bell rings again at midday reminding everyone of the community spirit",
+            "A light rain briefly slows the crowd but everyone is spirit stays strong",
+            "Local storytellers tell simple tales that catch everyone is attention",
+            "As evening comes the old bell rings one last time perfectly echoing the start of the day"
+        ];
+        const masterGeneratedChunks = [
+            "At first light the town s antique bell clangs signalling that the market is open for business",
+            "Stalls spring to life all around the square their owners lifting colourful awnings while the warm scent of freshbaked bread drifts through the crowd",
+            "A lively young hawker calls out bargains drawing curious shoppers closer",
+            "That bell keeps time for everyone its steady peal guiding the morning rush",
+            "Nearby an older merchant pauses at his booth offering bits of seasoned advice to anyone who will listen",
+            "When noon rolls around the bell sounds again a friendly reminder of the shared spirit that holds the place together",
+            "A brief shower scatters a few people but the mood never really fades",
+            "Storytellers soon reclaim the moment with simple tales that pull listeners back in",
+            "As dusk settles the same bell rings one final note neatly bookending the day it helped begin"
+        ];
+        const masterSimilarityValues = [ 
+            [0.7370159029960632, 0.36049479246139526, 0.2864117920398712, 0.4618435502052307, 0.28415101766586304, 0.38874679803848267, 0.062041692435741425, 0.1398382931947708, 0.396384596824646],
+            [0.46228477358818054, 0.7830807566642761, 0.29539820551872253, 0.26923325657844543, 0.26439976692199707, 0.22790609300136566, 0.14249320328235626, 0.15880179405212402, 0.23263423144817352],
+            [0.24440507590770721, 0.23892107605934143, 0.8148587942123413, 0.10520842671394348, 0.33790290355682373, 0.13824602961540222, 0.12043315172195435, 0.16991692781448364, 0.08404599875211716],
+            [0.5552115440368652, 0.25943243503570557, 0.100876584649086, 0.7341777682304382, 0.13715091347694397, 0.5934688448905945, 0.1672927737236023, 0.19931462407112122, 0.6569415330886841],
+            [0.25855350494384766, 0.2544209957122803, 0.29390156269073486, 0.16815820336341858, 0.7742273211479187, 0.16983099281787872, 0.11009273678064346, 0.16597811877727509, 0.15164847671985626],
+            [0.5696638822555542, 0.3402758240699768, 0.2480970323085785, 0.48396268486976624, 0.2415568232536316, 0.76483154296875, 0.1808718740940094, 0.21608683466911316, 0.5076240301132202],
+            [0.13403937220573425, 0.2198491096496582, 0.10608794540166855, 0.24389000236988068, 0.1335645467042923, 0.23978210985660553, 0.6893725991249084, 0.1837216466665268, 0.17716167867183685],
+            [0.2610381841659546, 0.2595180571079254, 0.21868903934955597, 0.26669347286224365, 0.27487316727638245, 0.28648361563682556, 0.22042769193649292, 0.6792755722999573, 0.25706613063812256],
+            [0.5379546880722046, 0.2775808870792389, 0.05919405445456505, 0.5496382117271423, 0.21814213693141937, 0.6080557107925415, 0.19224992394447327, 0.2122512310743332, 0.8691535592079163]
+        ];
+
+        let activeReferenceIndices = Array.from({ length: masterReferenceChunks.length }, (_, i) => i);
+        let activeGeneratedIndices = Array.from({ length: masterGeneratedChunks.length }, (_, i) => i);
+        let currentLct = parseInt(lctSlider.value);
+
+        const CONTEXT_CUTOFF_DEFAULT = 0.6; 
+        const CONTEXT_WINDOW_CTRL_DEFAULT = 4.0; 
+
+        let draggedItemOriginalIndex = null;
+        let draggedItemType = null; 
+        let placeholder = null;
+
+        function createPlaceholder() {
+            if (!placeholder) {
+                placeholder = document.createElement('li');
+                placeholder.classList.add('drag-placeholder');
+                placeholder.textContent = 'Drop here';
+            }
+            return placeholder;
+        }
+
+        function _calculate_f1(precision, recall) {
+            if (precision + recall === 0) return 0.0;
+            return (2 * precision * recall) / (precision + recall);
+        }
+
+        function buildCurrentSimilarityMatrix(forRecall = false) {
+            const numActiveRef = activeReferenceIndices.length;
+            const numActiveGen = activeGeneratedIndices.length;
+            let currentMatrix = [];
+
+            if (forRecall) { 
+                if (numActiveGen > 0 && numActiveRef > 0) {
+                    for (let i = 0; i < numActiveGen; i++) { 
+                        const original_g_idx = activeGeneratedIndices[i];
+                        const newRow = [];
+                        for (let j = 0; j < numActiveRef; j++) { 
+                            const original_r_idx = activeReferenceIndices[j];
+                            newRow.push(masterSimilarityValues[original_r_idx][original_g_idx]);
+                        }
+                        currentMatrix.push(newRow);
+                    }
+                }
+            } else { 
+                if (numActiveRef > 0 && numActiveGen > 0) {
+                    for (let i = 0; i < numActiveRef; i++) { 
+                        const original_r_idx = activeReferenceIndices[i];
+                        const newRow = [];
+                        for (let j = 0; j < numActiveGen; j++) { 
+                            const original_g_idx = activeGeneratedIndices[j];
+                            newRow.push(masterSimilarityValues[original_r_idx][original_g_idx]);
+                        }
+                        currentMatrix.push(newRow);
+                    }
+                }
+            }
+            return currentMatrix;
+        }
+
+        function get_mapping_windows_generic(lenX_active, lenY_active) {
+            if (lenX_active === 0 || lenY_active === 0) return { windows: Array(lenX_active).fill({ start: 0, end: 0 }) };
+            const isYLonger = lenY_active >= lenX_active;
+            const longerLen = isYLonger ? lenY_active : lenX_active;
+            const shorterLen = isYLonger ? lenX_active : lenY_active;
+            const slope = longerLen / shorterLen;
+            const mappingWindowSize = Math.ceil(slope);
+            let direct_windows = [];
+            for (let i = 0; i < shorterLen; i++) {
+                const idx_point = i * slope;
+                const start = Math.max(Math.floor(idx_point), 0);
+                const end = Math.min(start + mappingWindowSize, longerLen);
+                direct_windows.push({ start: start, end: end });
+            }
+            let windows_for_X_items = [];
+            if (isYLonger) {
+                windows_for_X_items = direct_windows;
+            } else {
+                for (let x_idx = 0; x_idx < lenX_active; x_idx++) {
+                    let mappedYIndices = [];
+                    direct_windows.forEach((y_window_on_x_axis, y_idx) => {
+                        if (x_idx >= y_window_on_x_axis.start && x_idx < y_window_on_x_axis.end) {
+                            mappedYIndices.push(y_idx);
+                        }
+                    });
+                    if (mappedYIndices.length > 0) {
+                        windows_for_X_items.push({ start: Math.min(...mappedYIndices), end: Math.max(...mappedYIndices) + 1 });
+                    } else { 
+                        const proportionalYPos = Math.max(0, Math.min(lenY_active - 1, Math.floor((x_idx / lenX_active) * lenY_active)));
+                        windows_for_X_items.push({ start: proportionalYPos, end: Math.min(proportionalYPos + 1, lenY_active) });
+                    }
+                }
+            }
+            return { windows: windows_for_X_items.map(w => ({start: w.start, end: Math.max(w.start +1, w.end)})) };
+        }
+
+        function findBestMatchWithContextJS(similarityArray, mappingWindow, cutoff, ctrl) {
+            let maxVal = -Infinity; let maxIdx = -1;
+            if (!similarityArray || similarityArray.length === 0) return { bestMatchIndex: -1, maxSimilarityIndex: -1, maxSimilarityValue: -Infinity };
+            similarityArray.forEach((val, idx) => { if (val > maxVal) { maxVal = val; maxIdx = idx; } });
+            if (maxIdx === -1) return { bestMatchIndex: -1, maxSimilarityIndex: maxIdx, maxSimilarityValue: maxVal };
+            const contextRange = 1 - cutoff;
+            const contextWindowApplied = maxVal > 0 && (contextRange - (1 - maxVal)) > 0;
+            const contextValueDrop = (contextWindowApplied && maxVal !== 0) ? ((contextRange - (1 - maxVal)) / maxVal) / ctrl : 0.0;
+            const contextThreshold = maxVal - contextValueDrop;
+            const candidateIndices = []; const candidateValues = [];
+            similarityArray.forEach((val, idx) => { if (val >= contextThreshold) { candidateIndices.push(idx); candidateValues.push(val); } });
+            let bestMatchIndexToReturn = maxIdx;
+            if (candidateIndices.length === 0) {
+                bestMatchIndexToReturn = maxIdx;
+            } else if (candidateIndices.length === 1 || !mappingWindow || typeof mappingWindow.start === 'undefined' || typeof mappingWindow.end === 'undefined') {
+                bestMatchIndexToReturn = candidateIndices.length === 1 ? candidateIndices[0] : maxIdx;
+            } else {
+                const { start, end } = mappingWindow; let distances = [];
+                candidateIndices.forEach(candIdx => {
+                    const isInWin = candIdx >= start && candIdx < end;
+                    if (isInWin) { distances.push(0); }
+                    else {
+                        const leftDist = Math.max(0, start - candIdx);
+                        const rightDist = Math.max(0, candIdx - (end - 1));
+                        distances.push(Math.max(leftDist, rightDist));
+                    }
+                });
+                let minDistance = Infinity; let highestSimilarityInMinDistanceGroup = -Infinity; bestMatchIndexToReturn = -1;
+                for (let i = 0; i < candidateIndices.length; i++) {
+                    const currentCandOriginalIndex = candidateIndices[i];
+                    const currentCandSimilarity = candidateValues[i];
+                    const currentDistance = distances[i];
+                    if (currentDistance < minDistance) {
+                        minDistance = currentDistance;
+                        highestSimilarityInMinDistanceGroup = currentCandSimilarity;
+                        bestMatchIndexToReturn = currentCandOriginalIndex;
+                    } else if (currentDistance === minDistance) {
+                        if (currentCandSimilarity > highestSimilarityInMinDistanceGroup) {
+                            highestSimilarityInMinDistanceGroup = currentCandSimilarity;
+                            bestMatchIndexToReturn = currentCandOriginalIndex;
+                        }
+                    }
+                }
+                if (bestMatchIndexToReturn === -1) bestMatchIndexToReturn = maxIdx;
+            }
+            return { bestMatchIndex: bestMatchIndexToReturn, maxSimilarityIndex: maxIdx, maxSimilarityValue: maxVal };
+        }
+
+        function generateActualPath(simMatrix, mappingWindowsForX, numActiveX, numActiveY) {
+            const actualPathPoints = [];
+            if (numActiveX === 0 || numActiveY === 0 || simMatrix.length === 0 || simMatrix[0].length === 0) return actualPathPoints;
+            for (let x_idx = 0; x_idx < numActiveX; x_idx++) {
+                const columnSimilarity = simMatrix.map(row => row[x_idx]);
+                const currentMappingWindow = mappingWindowsForX[x_idx];
+                const matchInfo = findBestMatchWithContextJS(columnSimilarity, currentMappingWindow, CONTEXT_CUTOFF_DEFAULT, CONTEXT_WINDOW_CTRL_DEFAULT);
+                let y_match_idx = matchInfo.bestMatchIndex;
+                if (y_match_idx === -1) {
+                    if (currentMappingWindow && typeof currentMappingWindow.start !== 'undefined') {
+                        y_match_idx = Math.floor((currentMappingWindow.start + currentMappingWindow.end) / 2);
+                    } else {
+                        y_match_idx = Math.floor(numActiveY / 2);
+                    }
+                    y_match_idx = Math.max(0, Math.min(numActiveY - 1, y_match_idx));
+                }
+                actualPathPoints.push({ x: x_idx, y: y_match_idx });
+            }
+            return actualPathPoints;
+        }
+
+        function computeIdealNarrativeLineBandJS(mappingWindows, numXChunks, numYChunks) {
+            const n_windows = mappingWindows.length;
+            if (n_windows === 0 || numXChunks === 0 || numYChunks === 0) {
+                return { shortest_line: 0.0, longest_line: 0.0, floor_path: [], ceil_path: [], floor_path_dy_map: {} };
+            }
+             if (n_windows === 1 && mappingWindows[0]) {
+                const y_coord = Math.max(0, Math.min(numYChunks -1, mappingWindows[0].start));
+                const singlePointPath = [{x:0, y: y_coord}];
+                return { shortest_line: 0.0, longest_line: 0.0, floor_path: singlePointPath, ceil_path: singlePointPath, floor_path_dy_map: {} };
+            }
+            let dp_min_list = [], dp_max_list = [], pred_min_list = [], pred_max_list = [];
+            for (let i = 0; i < n_windows; i++) {
+                if (!mappingWindows[i]) {
+                     dp_min_list.push([]); dp_max_list.push([]); pred_min_list.push([]); pred_max_list.push([]); continue;
+                }
+                const { start, end } = mappingWindows[i];
+                const window_height = Math.max(1, end - start);
+                dp_min_list.push(Array(window_height).fill(Infinity));
+                dp_max_list.push(Array(window_height).fill(-Infinity));
+                pred_min_list.push(Array(window_height).fill(-1));
+                pred_max_list.push(Array(window_height).fill(-1));
+            }
+            if (mappingWindows[0]) {
+                const { start: start0, end: end0 } = mappingWindows[0];
+                const window0_height = Math.max(1, end0 - start0);
+                for (let y_offset = 0; y_offset < window0_height; y_offset++) {
+                    if (dp_min_list[0] && dp_min_list[0][y_offset] !== undefined) {
+                        dp_min_list[0][y_offset] = 0; dp_max_list[0][y_offset] = 0;
+                    }
+                }
+            }
+            for (let i = 1; i < n_windows; i++) {
+                if (!mappingWindows[i-1] || !mappingWindows[i]) continue;
+                const { start: curr_start, end: curr_end } = mappingWindows[i];
+                const curr_window_height = Math.max(1, curr_end - curr_start);
+                const { start: prev_start, end: prev_end } = mappingWindows[i-1];
+                const prev_window_height = Math.max(1, prev_end - prev_start);
+                for (let y_curr_offset = 0; y_curr_offset < curr_window_height; y_curr_offset++) {
+                    const curr_y_abs = curr_start + y_curr_offset;
+                    for (let y_prev_offset = 0; y_prev_offset < prev_window_height; y_prev_offset++) {
+                        const prev_y_abs = prev_start + y_prev_offset;
+                        const dx_val = 1; const dy_val = curr_y_abs - prev_y_abs;
+                        const distance = Math.sqrt(dx_val*dx_val + dy_val*dy_val);
+                        if (dp_min_list[i-1]?.[y_prev_offset] !== undefined && dp_min_list[i]?.[y_curr_offset] !== undefined) {
+                            if (dp_min_list[i-1][y_prev_offset] + distance < dp_min_list[i][y_curr_offset]) {
+                                dp_min_list[i][y_curr_offset] = dp_min_list[i-1][y_prev_offset] + distance;
+                                pred_min_list[i][y_curr_offset] = y_prev_offset;
+                            }
+                        }
+                        if (dp_max_list[i-1]?.[y_prev_offset] !== undefined && dp_max_list[i]?.[y_curr_offset] !== undefined) {
+                             if (dp_max_list[i-1][y_prev_offset] !== -Infinity && dp_max_list[i-1][y_prev_offset] + distance > dp_max_list[i][y_curr_offset]) {
+                                dp_max_list[i][y_curr_offset] = dp_max_list[i-1][y_prev_offset] + distance;
+                                pred_max_list[i][y_curr_offset] = y_prev_offset;
+                            }
+                        }
+                    }
+                }
+            }
+            let shortest_line = 0, longest_line = 0;
+            let shortest_end_y_offset = 0, longest_end_y_offset = 0;
+            if (n_windows > 0 && mappingWindows[n_windows - 1] && dp_min_list[n_windows -1] && dp_max_list[n_windows -1]) {
+                const last_window_idx = n_windows - 1;
+                const { start: last_start, end: last_end } = mappingWindows[last_window_idx];
+                const last_window_height = Math.max(1, last_end - last_start);
+                shortest_line = Infinity;
+                for (let y_offset = 0; y_offset < last_window_height; y_offset++) {
+                    if (dp_min_list[last_window_idx]?.[y_offset] < shortest_line) {
+                        shortest_line = dp_min_list[last_window_idx][y_offset];
+                        shortest_end_y_offset = y_offset;
+                    }
+                }
+                if (shortest_line === Infinity) shortest_line = 0;
+                longest_line = -Infinity;
+                for (let y_offset = 0; y_offset < last_window_height; y_offset++) {
+                     if (dp_max_list[last_window_idx]?.[y_offset] > longest_line) {
+                        longest_line = dp_max_list[last_window_idx][y_offset];
+                        longest_end_y_offset = y_offset;
+                    }
+                }
+                if (longest_line === -Infinity) longest_line = shortest_line;
+            }
+            let floor_path = [];
+            if (n_windows > 0 && mappingWindows[0]) {
+                let current_y_offset_min = shortest_end_y_offset;
+                for (let i = n_windows - 1; i >= 0; i--) {
+                    if (!mappingWindows[i] || !pred_min_list[i] || (pred_min_list[i][current_y_offset_min] === undefined && i > 0 && n_windows > 1)) break;
+                    if (typeof mappingWindows[i].start !== 'number') break;
+                    const y_abs = mappingWindows[i].start + current_y_offset_min;
+                    floor_path.unshift({ x: i, y: y_abs });
+                    if (i > 0) {
+                        if (pred_min_list[i][current_y_offset_min] === -1 || pred_min_list[i][current_y_offset_min] === undefined) break;
+                        current_y_offset_min = pred_min_list[i][current_y_offset_min];
+                    }
+                }
+            }
+            let ceil_path = [];
+             if (n_windows > 0 && mappingWindows[0]) {
+                let current_y_offset_max = longest_end_y_offset;
+                for (let i = n_windows - 1; i >= 0; i--) {
+                    if (!mappingWindows[i] || !pred_max_list[i] || (pred_max_list[i][current_y_offset_max] === undefined && i > 0 && n_windows > 1)) break;
+                    if (typeof mappingWindows[i].start !== 'number') break;
+                    const y_abs = mappingWindows[i].start + current_y_offset_max;
+                    ceil_path.unshift({ x: i, y: y_abs });
+                    if (i > 0) {
+                        if (pred_max_list[i][current_y_offset_max] === -1 || pred_max_list[i][current_y_offset_max] === undefined) break;
+                        current_y_offset_max = pred_max_list[i][current_y_offset_max];
+                    }
+                }
+            }
+            const floor_path_dy_map = generateFloorPathDyMap(floor_path);
+            return { shortest_line, longest_line, floor_path, ceil_path, floor_path_dy_map };
+        }
+
+        function generateFloorPathDyMap(floorPath) {
+            const dyMap = {};
+            if (!floorPath || floorPath.length < 2) return dyMap;
+            for (let i = 0; i < floorPath.length - 1; i++) {
+                const p1 = floorPath[i]; const p2 = floorPath[i+1];
+                if (p2.x - p1.x === 1) dyMap[p1.x] = p2.y - p1.y;
+            }
+            return dyMap;
+        }
+
+        function computeActualLineLengthJS(actualPathPoints, totalYChunks, totalXChunks, lctValue, localFloorPathDyMap) {
+            if (!actualPathPoints || actualPathPoints.length <= 1) {
+                return { totalLength: 0.0, segments: [], lct_window_base: 0, expanded_lct_window: 0 };
+            }
+            const sortedPath = [...actualPathPoints].sort((a,b) => a.x - b.x);
+            let currentTotalLength = 0;
+            const mappingWindowHeight = totalXChunks > 0 ? Math.ceil(totalYChunks / totalXChunks) : 0;
+            const ratio = totalXChunks > 0 ? totalYChunks / totalXChunks : 0;
+            const ratioDecimalPart = ratio - Math.floor(ratio);
+            let lct_window_base;
+            if (totalYChunks <= totalXChunks) {
+                lct_window_base = mappingWindowHeight;
+            } else {
+                if (ratioDecimalPart > 0 && ratioDecimalPart <= 0.5) lct_window_base = (2 * mappingWindowHeight) - 2;
+                else lct_window_base = (2 * mappingWindowHeight) - 1;
+            }
+            lct_window_base = Math.max(0, lct_window_base);
+            const expanded_lct_window = lct_window_base * (1 + lctValue);
+
+            for (let i = 0; i < sortedPath.length - 1; i++) {
+                const p1 = sortedPath[i]; const p2 = sortedPath[i+1];
+                const dx_segment = p2.x - p1.x; const dy_segment_raw = p2.y - p1.y;
+                if (dx_segment <= 0) continue;
+                const dy_for_eval = (lctValue > 0) ? Math.abs(dy_segment_raw) : dy_segment_raw;
+                let segmentLength = 0;
+                if (dy_for_eval <= lct_window_base && (lctValue === 0 ? dy_for_eval >= 0 : true)) {
+                    segmentLength = Math.sqrt(dx_segment**2 + dy_segment_raw**2);
+                } else if (lctValue > 0 && dy_for_eval > lct_window_base && dy_for_eval <= expanded_lct_window) {
+                    let floor_dy_val = dy_segment_raw;
+                    if (localFloorPathDyMap && localFloorPathDyMap.hasOwnProperty(p1.x)) floor_dy_val = localFloorPathDyMap[p1.x];
+                    segmentLength = Math.sqrt(dx_segment**2 + floor_dy_val**2);
+                }
+                currentTotalLength += segmentLength;
+            }
+            return { totalLength: currentTotalLength, lct_window_base, expanded_lct_window };
+        }
+
+        function calculateLineNAS(floorLength, ceilLength, actualLength) {
+            const fl = Math.max(0, floorLength); const cl = Math.max(0, ceilLength); const al = Math.max(0, actualLength);
+            if (fl === 0 && cl === 0 && al === 0) return 1.0;
+            if (fl === 0 && al === 0) return 1.0;
+            if (fl <= al && al <= cl) return 1.0;
+            else if (al < fl) return fl > 0 ? al / fl : 0.0;
+            else return al > 0 ? cl / al : 0.0;
+        }
+
+        function updateGridBackground(gridElement, numX, numY) {
+            requestAnimationFrame(() => {
+                if (numX > 0 && numY > 0) {
+                    gridElement.style.backgroundImage = `
+                        linear-gradient(to right, #e2e8f0 1px, transparent 1px),
+                        linear-gradient(to bottom, #e2e8f0 1px, transparent 1px)`;
+                    gridElement.style.backgroundSize = `calc(100% / ${numX}) calc(100% / ${numY})`;
+                } else {
+                    gridElement.style.backgroundImage = 'none';
+                }
+            });
+        }
+
+        function renderAxisLabels(axisLabelContainerX, axisLabelContainerY, numX, numY) {
+            axisLabelContainerX.innerHTML = ''; axisLabelContainerY.innerHTML = '';
+            if (numX === 0 || numY === 0) return;
+            const labelFontSize = parseFloat(getComputedStyle(document.documentElement).fontSize) * 0.65;
+            const maxYIdx = numY - 1; const yStep = Math.max(1, Math.ceil(numY / 8)) || 1;
+            for (let i = 0; i <= maxYIdx; i += yStep) {
+                const lbl = document.createElement('div'); lbl.classList.add('axis-label'); lbl.textContent = i;
+                lbl.style.left = '-20px';
+                lbl.style.bottom = `calc(${i}*100%/${numY} + 50%/${numY} - ${labelFontSize/2}px)`;
+                lbl.style.transform = 'translateY(50%)'; axisLabelContainerY.appendChild(lbl);
+            }
+             if (maxYIdx > 0 && (maxYIdx % yStep !== 0 || numY <= 8)) {
+                if (!axisLabelContainerY.querySelector(`.axis-label[data-val='${maxYIdx}']`)) {
+                    const lbl = document.createElement('div'); lbl.classList.add('axis-label'); lbl.textContent = maxYIdx; lbl.dataset.val = maxYIdx;
+                    lbl.style.left = '-20px'; lbl.style.bottom = `calc(${maxYIdx}*100%/${numY} + 50%/${numY} - ${labelFontSize/2}px)`;
+                    lbl.style.transform = 'translateY(50%)'; axisLabelContainerY.appendChild(lbl);
+                }
+            }
+            const maxXIdx = numX - 1; const xStep = Math.max(1, Math.ceil(numX / 8)) || 1;
+            for (let i = 0; i <= maxXIdx; i += xStep) {
+                const lbl = document.createElement('div'); lbl.classList.add('axis-label'); lbl.textContent = i;
+                lbl.style.bottom = '-15px';
+                lbl.style.left = `calc(${i}*100%/${numX} + 50%/${numX})`;
+                lbl.style.transform = 'translateX(-50%)'; axisLabelContainerX.appendChild(lbl);
+            }
+            if (maxXIdx > 0 && (maxXIdx % xStep !== 0 || numX <= 8)) {
+                 if (!axisLabelContainerX.querySelector(`.axis-label[data-val='${maxXIdx}']`)) {
+                    const lbl = document.createElement('div'); lbl.classList.add('axis-label'); lbl.textContent = maxXIdx; lbl.dataset.val = maxXIdx;
+                    lbl.style.bottom = '-15px'; lbl.style.left = `calc(${maxXIdx}*100%/${numX} + 50%/${numX})`;
+                    lbl.style.transform = 'translateX(-50%)'; axisLabelContainerX.appendChild(lbl);
+                }
+            }
+        }
+
+        function renderIdealMappingWindows(windowContainer, windowsData, numX, numY) {
+            windowContainer.innerHTML = '';
+            if (!windowsData || numX === 0 || numY === 0) return;
+            windowsData.forEach((windowObj, x_idx) => {
+                if (x_idx >= numX || !windowObj) return;
+                const idealWindowDiv = document.createElement('div');
+                idealWindowDiv.classList.add('ideal-mapping-window');
+                idealWindowDiv.style.left = `calc(${x_idx} * 100% / ${numX})`;
+                idealWindowDiv.style.width = `calc(100% / ${numX})`;
+                const startY = Math.max(0, windowObj.start);
+                const endY = Math.min(numY, windowObj.end);
+                const height = Math.max(0, endY - startY);
+                idealWindowDiv.style.bottom = `calc(${startY} * 100% / ${numY})`;
+                idealWindowDiv.style.height = `calc(${height} * 100% / ${numY})`;
+                windowContainer.appendChild(idealWindowDiv);
+            });
+        }
+
+        function drawPathAndMarkersOnSvg(svgElement, pathData, lineClass, markerFillColor, markerStrokeColor, numX, numY, chartGridElement) {
+            svgElement.innerHTML = ''; 
+            const chartWidthPx = chartGridElement.clientWidth;
+            const chartHeightPx = chartGridElement.clientHeight;
+            if (numX === 0 || numY === 0 || chartWidthPx === 0 || chartHeightPx === 0 || !pathData || pathData.length === 0) return;
+            const cellWidthPx = chartWidthPx / numX;
+            const cellHeightPx = chartHeightPx / numY;
+            if (pathData.length >= 2) {
+                const points = pathData.map(p => `${(p.x + 0.5) * cellWidthPx},${chartHeightPx - ((p.y + 0.5) * cellHeightPx)}`).join(' ');
+                const polyline = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
+                polyline.setAttribute('points', points); polyline.setAttribute('class', lineClass);
+                svgElement.appendChild(polyline);
+            }
+            pathData.forEach(p => {
+                const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                circle.setAttribute('cx', (p.x + 0.5) * cellWidthPx);
+                circle.setAttribute('cy', chartHeightPx - ((p.y + 0.5) * cellHeightPx));
+                circle.setAttribute('class', 'path-marker-circle');
+                circle.style.fill = markerFillColor; circle.style.stroke = markerStrokeColor;
+                svgElement.appendChild(circle);
+            });
+        }
+        
+        function renderSegmentLists() {
+            referenceSegmentsUl.innerHTML = ''; generatedSegmentsUl.innerHTML = '';
+            activeRefChunkCountSpan.textContent = activeReferenceIndices.length;
+            totalRefChunkCountSpan.textContent = masterReferenceChunks.length;
+            activeGenChunkCountSpan.textContent = activeGeneratedIndices.length;
+            totalGenChunkCountSpan.textContent = masterGeneratedChunks.length;
+
+            activeReferenceIndices.forEach((originalIndex) => {
+                const chunk = masterReferenceChunks[originalIndex];
+                const li = document.createElement('li');
+                li.dataset.originalIndex = originalIndex;
+                li.dataset.chunkType = 'reference';
+                li.textContent = `Ref ${originalIndex}: ${chunk}`;
+                li.setAttribute('draggable', true); 
+                li.addEventListener('click', (e) => { 
+                     if (e.target.tagName === 'LI') toggleChunkActiveState('reference', originalIndex);
+                });
+                referenceSegmentsUl.appendChild(li);
+            });
+            masterReferenceChunks.forEach((chunk, originalIndex) => {
+                if (!activeReferenceIndices.includes(originalIndex)) {
+                    const li = document.createElement('li');
+                    li.dataset.originalIndex = originalIndex;
+                    li.dataset.chunkType = 'reference';
+                    li.textContent = `Ref ${originalIndex}: ${chunk}`;
+                    li.classList.add('inactive-chunk');
+                    li.addEventListener('click', () => toggleChunkActiveState('reference', originalIndex));
+                    referenceSegmentsUl.appendChild(li); 
+                }
+            });
+
+            activeGeneratedIndices.forEach((originalIndex) => {
+                const chunk = masterGeneratedChunks[originalIndex];
+                const li = document.createElement('li');
+                li.dataset.originalIndex = originalIndex;
+                li.dataset.chunkType = 'generated';
+                li.textContent = `Gen ${originalIndex}: ${chunk}`;
+                li.setAttribute('draggable', true); 
+                 li.addEventListener('click', (e) => { 
+                     if (e.target.tagName === 'LI') toggleChunkActiveState('generated', originalIndex);
+                });
+                generatedSegmentsUl.appendChild(li);
+            });
+            masterGeneratedChunks.forEach((chunk, originalIndex) => {
+                if (!activeGeneratedIndices.includes(originalIndex)) {
+                    const li = document.createElement('li');
+                    li.dataset.originalIndex = originalIndex;
+                    li.dataset.chunkType = 'generated';
+                    li.textContent = `Gen ${originalIndex}: ${chunk}`;
+                    li.classList.add('inactive-chunk');
+                    li.addEventListener('click', () => toggleChunkActiveState('generated', originalIndex));
+                    generatedSegmentsUl.appendChild(li);
+                }
+            });
+        }
+
+
+        function handleDragStart(e) {
+            if (!e.target.classList.contains('inactive-chunk') && e.target.tagName === 'LI') {
+                draggedItemOriginalIndex = parseInt(e.target.dataset.originalIndex);
+                draggedItemType = e.target.dataset.chunkType;
+                e.dataTransfer.effectAllowed = 'move';
+                e.dataTransfer.setData('text/plain', draggedItemOriginalIndex); 
+                setTimeout(() => e.target.classList.add('dragging'), 0); 
+            } else {
+                e.preventDefault(); 
+            }
+        }
+
+        function handleDragOver(e) {
+            e.preventDefault();
+            const targetLi = e.target.closest('li:not(.inactive-chunk):not(.dragging)');
+            const listUl = e.target.closest('ul');
+            if (!targetLi || !listUl || (draggedItemType !== targetLi.dataset.chunkType)) { 
+                if (placeholder && placeholder.parentNode) placeholder.remove();
+                return;
+            }
+            
+            const rect = targetLi.getBoundingClientRect();
+            const isAfter = e.clientY > rect.top + rect.height / 2;
+            const currentPlaceholder = createPlaceholder();
+
+            if (isAfter) {
+                listUl.insertBefore(currentPlaceholder, targetLi.nextSibling);
+            } else {
+                listUl.insertBefore(currentPlaceholder, targetLi);
+            }
+        }
+        
+        function handleDragLeave(e) {
+            if (e.relatedTarget && !e.currentTarget.contains(e.relatedTarget)) {
+                 if (placeholder && placeholder.parentNode) placeholder.remove();
+            }
+        }
+
+        function handleDrop(e) {
+            e.preventDefault();
+            if (placeholder && placeholder.parentNode) placeholder.remove();
+            
+            const targetLi = e.target.closest('li:not(.inactive-chunk):not(.dragging)');
+            const listUl = e.target.closest('ul');
+
+            if (draggedItemOriginalIndex === null || !listUl) return;
+            if (targetLi && draggedItemType !== targetLi.dataset.chunkType) return; 
+
+
+            const activeIndicesArray = draggedItemType === 'reference' ? activeReferenceIndices : activeGeneratedIndices;
+            
+            const draggedItemCurrentIdxInActive = activeIndicesArray.indexOf(draggedItemOriginalIndex);
+            if (draggedItemCurrentIdxInActive === -1) return; 
+
+            activeIndicesArray.splice(draggedItemCurrentIdxInActive, 1); 
+
+            if (targetLi) {
+                const targetOriginalIndex = parseInt(targetLi.dataset.originalIndex);
+                const targetIdxInActive = activeIndicesArray.indexOf(targetOriginalIndex);
+                
+                const rect = targetLi.getBoundingClientRect();
+                const isAfter = e.clientY > rect.top + rect.height / 2;
+
+                if (isAfter) {
+                    activeIndicesArray.splice(targetIdxInActive + 1, 0, draggedItemOriginalIndex);
+                } else {
+                    activeIndicesArray.splice(targetIdxInActive, 0, draggedItemOriginalIndex);
+                }
+            } else {
+                activeIndicesArray.push(draggedItemOriginalIndex);
+            }
+            
+            const draggedDOMElement = listUl.querySelector(`.dragging`);
+            if(draggedDOMElement) draggedDOMElement.classList.remove('dragging');
+
+            draggedItemOriginalIndex = null;
+            draggedItemType = null;
+            updateDynamicStateAndRender();
+        }
+
+        function handleDragEnd(e) {
+            if (placeholder && placeholder.parentNode) placeholder.remove();
+            const draggingElem = document.querySelector('.dragging');
+            if (draggingElem) draggingElem.classList.remove('dragging');
+            draggedItemOriginalIndex = null;
+            draggedItemType = null;
+        }
+
+
+        function toggleChunkActiveState(type, originalIndex) {
+            let activeIndicesArray = (type === 'reference') ? activeReferenceIndices : activeGeneratedIndices;
+            const minChunks = 1;
+            const currentIndexPositionInActive = activeIndicesArray.indexOf(originalIndex);
+
+            if (currentIndexPositionInActive > -1) { 
+                if (activeIndicesArray.length > minChunks) {
+                    activeIndicesArray.splice(currentIndexPositionInActive, 1);
+                } else { return; } 
+            } else { 
+                activeIndicesArray.push(originalIndex);
+                activeIndicesArray.sort((a, b) => a - b); 
+            }
+            updateDynamicStateAndRender();
+        }
+        
+        function resetSegmentOrder(type) {
+            if (type === 'generated') {
+                activeGeneratedIndices.sort((a, b) => a - b);
+            } else if (type === 'reference') {
+                activeReferenceIndices.sort((a, b) => a - b);
+            }
+            updateDynamicStateAndRender();
+        }
+
+
+        function updateDynamicStateAndRender() {
+            currentLct = parseInt(lctSlider.value); 
+            lctValueDisplay.textContent = currentLct; 
+            const numActiveRef = activeReferenceIndices.length;
+            const numActiveGen = activeGeneratedIndices.length;
+
+            const precisionSimMatrix = buildCurrentSimilarityMatrix(false);
+            const precisionMappingWindows = get_mapping_windows_generic(numActiveGen, numActiveRef).windows;
+            const precisionIdealBand = computeIdealNarrativeLineBandJS(precisionMappingWindows, numActiveGen, numActiveRef);
+            const precisionActualPathPoints = generateActualPath(precisionSimMatrix, precisionMappingWindows, numActiveGen, numActiveRef);
+            const { totalLength: precisionActualLen } = computeActualLineLengthJS(precisionActualPathPoints, numActiveRef, numActiveGen, currentLct, precisionIdealBand.floor_path_dy_map);
+            const precisionNas = calculateLineNAS(precisionIdealBand.shortest_line, precisionIdealBand.longest_line, precisionActualLen);
+
+            const recallSimMatrix = buildCurrentSimilarityMatrix(true); 
+            const recallMappingWindows = get_mapping_windows_generic(numActiveRef, numActiveGen).windows;
+            const recallIdealBand = computeIdealNarrativeLineBandJS(recallMappingWindows, numActiveRef, numActiveGen);
+            const recallActualPathPoints = generateActualPath(recallSimMatrix, recallMappingWindows, numActiveRef, numActiveGen);
+            const { totalLength: recallActualLen } = computeActualLineLengthJS(recallActualPathPoints, numActiveGen, numActiveRef, currentLct, recallIdealBand.floor_path_dy_map);
+            const recallNas = calculateLineNAS(recallIdealBand.shortest_line, recallIdealBand.longest_line, recallActualLen);
+
+            const f1Nas = _calculate_f1(precisionNas, recallNas);
+
+            renderSegmentLists(); 
+            
+            updateGridBackground(precisionChartGrid, numActiveGen, numActiveRef);
+            renderAxisLabels(precisionAxisLabelContainerX, precisionAxisLabelContainerY, numActiveGen, numActiveRef);
+            renderIdealMappingWindows(precisionIdealMappingContainer, precisionMappingWindows, numActiveGen, numActiveRef);
+            drawPathAndMarkersOnSvg(precisionIdealPathsSvg, precisionIdealBand.floor_path, 'floor-path-line', '#93c5fd', '#0ea5e9', numActiveGen, numActiveRef, precisionChartGrid);
+            drawPathAndMarkersOnSvg(precisionIdealPathsSvg, precisionIdealBand.ceil_path, 'ceil-path-line', '#f9a8d4', '#ec4899', numActiveGen, numActiveRef, precisionChartGrid);
+            drawPathAndMarkersOnSvg(precisionActualPathSvg, precisionActualPathPoints, 'actual-path-line', '#c4b5fd', '#8b5cf6', numActiveGen, numActiveRef, precisionChartGrid);
+            precisionFloorLengthDisplay.textContent = precisionIdealBand.shortest_line.toFixed(2);
+            precisionCeilLengthDisplay.textContent = precisionIdealBand.longest_line.toFixed(2);
+            precisionActualLengthDisplay.textContent = precisionActualLen.toFixed(2);
+            precisionLineNasScoreDisplay.textContent = precisionNas.toFixed(3);
+
+            updateGridBackground(recallChartGrid, numActiveRef, numActiveGen);
+            renderAxisLabels(recallAxisLabelContainerX, recallAxisLabelContainerY, numActiveRef, numActiveGen);
+            renderIdealMappingWindows(recallIdealMappingContainer, recallMappingWindows, numActiveRef, numActiveGen);
+            drawPathAndMarkersOnSvg(recallIdealPathsSvg, recallIdealBand.floor_path, 'floor-path-line', '#93c5fd', '#0ea5e9', numActiveRef, numActiveGen, recallChartGrid);
+            drawPathAndMarkersOnSvg(recallIdealPathsSvg, recallIdealBand.ceil_path, 'ceil-path-line', '#f9a8d4', '#ec4899', numActiveRef, numActiveGen, recallChartGrid);
+            drawPathAndMarkersOnSvg(recallActualPathSvg, recallActualPathPoints, 'actual-path-line', '#c4b5fd', '#8b5cf6', numActiveRef, numActiveGen, recallChartGrid);
+            recallFloorLengthDisplay.textContent = recallIdealBand.shortest_line.toFixed(2);
+            recallCeilLengthDisplay.textContent = recallIdealBand.longest_line.toFixed(2);
+            recallActualLengthDisplay.textContent = recallActualLen.toFixed(2);
+            recallLineNasScoreDisplay.textContent = recallNas.toFixed(3);
+
+            overallPrecisionNasDisplay.textContent = precisionNas.toFixed(3);
+            overallRecallNasDisplay.textContent = recallNas.toFixed(3);
+            f1LineNasValueDisplay.textContent = f1Nas.toFixed(3);
+        }
+
+        lctSlider.addEventListener('input', updateDynamicStateAndRender);
+        resetGenOrderBtn.addEventListener('click', () => resetSegmentOrder('generated'));
+        resetRefOrderBtn.addEventListener('click', () => resetSegmentOrder('reference'));
+        
+        [referenceSegmentsUl, generatedSegmentsUl].forEach(ul => {
+            ul.addEventListener('dragstart', handleDragStart);
+            ul.addEventListener('dragover', handleDragOver);
+            ul.addEventListener('dragleave', handleDragLeave); 
+            ul.addEventListener('drop', handleDrop);
+            ul.addEventListener('dragend', handleDragEnd); 
+        });
+
+        let resizeTimer;
+        window.addEventListener('resize', () => {
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(updateDynamicStateAndRender, 150);
+        });
+        window.addEventListener('load', () => {
+            activeReferenceIndices = Array.from({ length: masterReferenceChunks.length }, (_, i) => i);
+            activeGeneratedIndices = Array.from({ length: masterGeneratedChunks.length }, (_, i) => i);
+            updateDynamicStateAndRender();
+        });
+    </script>
+</body>
+</html>

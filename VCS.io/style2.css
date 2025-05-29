@@ -1,0 +1,325 @@
+/* Ensure Inter font is loaded if not using Tailwind's default sans-serif stack */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
+
+body {
+    font-family: 'Inter', sans-serif;
+    scroll-behavior: smooth;
+    background-color: #f8fafc; /* slate-50 */
+    color: #334155; /* slate-700 */
+}
+
+/* --- Header Styling --- */
+.sticky-header {
+    background-color: rgba(255, 255, 255, 0.97); /* Slightly more opaque */
+    backdrop-filter: blur(10px);
+}
+
+/* --- Primary Tab Navigation (Paper, Example, API) --- */
+#primaryTabsNav .tab-button {
+    padding: 0.65rem 1rem; 
+    font-weight: 500;
+    color: #475569; /* slate-600 */
+    border-bottom: 3px solid transparent;
+    transition: color 0.3s ease, border-color 0.3s ease, background-color 0.3s ease;
+    border-radius: 0.375rem; /* md */
+}
+#primaryTabsNav .tab-button:hover {
+    color: #0d9488; /* teal-600 */
+    background-color: #f1f5f9; /* slate-100 */
+}
+#primaryTabsNav .tab-button.active {
+    color: #0d9488; /* teal-600 */
+    font-weight: 600;
+    border-bottom-color: #0d9488; /* teal-600 */
+    background-color: #ccfbf1; /* teal-100 */
+}
+
+/* --- Secondary Navigation (for Paper tab sections: Abstract, Intro etc.) --- */
+.nav-button { 
+    transition: all 0.3s ease-in-out;
+    border-bottom: 2px solid transparent;
+}
+.nav-button.active {
+    color: #0d9488; /* teal-600 */
+    border-bottom-color: #0d9488; /* teal-600 */
+    font-weight: 600;
+}
+.nav-button:not(.active):hover {
+    color: #0f766e; /* teal-700 */
+    border-bottom-color: #ccfbf1; /* teal-100 */
+}
+#secondaryNavContainer.hidden { display: none; }
+
+/* --- Tab Content (dynamically loaded) --- */
+.tab-inner-content.hidden { 
+    display: none;
+}
+
+
+/* --- Content Sections (Common for all tabs) --- */
+.content-section {
+    padding-top: 5rem; 
+    margin-top: -5rem; 
+    margin-bottom: 2.5rem;
+}
+.content-section h2 { 
+    font-size: 2rem; font-weight: 700; color: #0f766e; /* teal-700 */
+    margin-bottom: 1.5rem; border-bottom: 2px solid #99f6e4; /* teal-200 */
+    padding-bottom: 0.5rem; display: inline-block;
+}
+.content-section h3, .api-section-content h3, .pane-content h3, .flowchart-step-title {
+    font-size: 1.5rem; /* text-xl */
+    font-weight: 600; /* font-semibold */
+    color: #0d9488; /* teal-600 */
+    margin-top: 1rem; margin-bottom: 1rem;
+}
+ .content-section h4, .api-section-content h4, .pane-content h4, .flowchart-title {
+    font-size: 1.1rem; /* text-lg */
+    font-weight: 600; /* font-semibold */
+    color: #115e59; /* teal-800 */
+    margin-bottom: 0.5rem; /* mb-2 */
+}
+.content-section p, .content-section li, .api-section-content p, .api-section-content li, .pane-content p, .pane-content li {
+    margin-bottom: 1rem; line-height: 1.75; color: #475569; /* slate-600 */
+    font-size: 1.05rem;
+}
+.content-section ul, .api-section-content ul, .pane-content ul {
+    list-style-type: disc; list-style-position: outside; padding-left: 1.5rem;
+}
+.content-section ul li::marker, .api-section-content ul li::marker, .pane-content ul li::marker { color: #0d9488; /* teal-600 */ }
+
+/* --- Enhanced Placeholders --- */
+.enhanced-placeholder {
+    background: linear-gradient(135deg, #e0f2f1 0%, #b2dfdb 100%); border: none;
+    color: #004d40; display: flex; flex-direction: column; align-items: center;
+    justify-content: center; text-align: center; border-radius: 0.75rem;
+    margin: 1rem auto; padding: 1.5rem; 
+    box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05), 0 4px 6px -2px rgba(0,0,0,0.03);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.enhanced-placeholder:hover {
+    transform: translateY(-3px); 
+    box-shadow: 0 15px 20px -5px rgba(0,0,0,0.07), 0 8px 8px -5px rgba(0,0,0,0.04);
+}
+.enhanced-placeholder i { font-size: 2.5rem; margin-bottom: 0.75rem; color: #00796b; }
+
+/* --- Equations --- */
+.equation {
+    background-color: #f1f5f9; padding: 1rem 1.5rem; border-radius: 0.5rem;
+    margin-top: 0.75rem; margin-bottom: 1.25rem; border: 1px solid #e2e8f0;
+    color: #334155; box-shadow: 0 3px 6px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.03);
+    font-size: 1.05rem; overflow-x: auto; line-height: 1.6;
+}
+.equation .MathJax_SVG_Display { margin: 0.5em 0 !important; }
+
+/* --- Tables --- */
+.table-container {
+    overflow-x: auto; margin-bottom: 2rem; border-radius: 0.5rem;
+    box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03);
+}
+table { width: 100%; border-collapse: collapse; }
+th, td {
+    border: none; border-bottom: 1px solid #cbd5e1; padding: 0.75rem 1rem;
+    text-align: left; font-size: 0.9rem;
+}
+th {
+    background-color: #f1f5f9; color: #0f766e; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.05em;
+}
+tr:last-child td { border-bottom: none; }
+tr:hover { background-color: #f8fafc; }
+
+/* --- Scroll to Top Button --- */
+#scrollToTopBtn {
+    position: fixed; bottom: 20px; right: 20px; background-color: #0d9488;
+    color: white; border: none; border-radius: 50%; width: 50px; height: 50px;
+    font-size: 24px; cursor: pointer; display: none; align-items: center;
+    justify-content: center; box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    transition: background-color 0.3s ease, opacity 0.3s ease, transform 0.3s ease;
+    z-index: 100;
+}
+#scrollToTopBtn:hover { background-color: #0f766e; transform: scale(1.1); }
+
+/* --- Animations --- */
+.fade-in-section {
+    opacity: 0; transform: translateY(20px);
+    transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+}
+.fade-in-section.visible { opacity: 1; transform: translateY(0); }
+
+/* Card style for main article content */
+.article-card {
+    background-color: white; border-radius: 0.75rem;
+    box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.05), 0 8px 10px -6px rgb(0 0 0 / 0.05);
+    overflow: hidden; 
+}
+
+/* Hero section styling */
+#hero-section {
+    background: linear-gradient(45deg, #0d9488, #0f766e); color: white;
+    padding: 3rem 1.5rem; text-align: center;
+}
+#hero-section h1 {
+    font-size: 2.8rem; font-weight: 800; margin-bottom: 0.75rem;
+    text-shadow: 1px 1px 3px rgba(0,0,0,0.2);
+}
+#hero-section .authors { font-size: 1.1rem; color: #ccfbf1; margin-bottom: 0.25rem; }
+#hero-section .affiliation { font-size: 0.95rem; color: #99f6e4; margin-bottom: 2rem; }
+
+/* API navigation links */
+.api-nav-link.active-api-link {
+    font-weight: 600; color: #0f766e; /* teal-700 */
+    border-left: 3px solid #0d9488; /* teal-600 */
+    padding-left: 0.75rem; 
+    background-color: #f0fdfa; /* teal-50 */
+}
+ .api-nav-link {
+    display: block; padding: 0.5rem 0.25rem; border-radius: 0.25rem;
+    transition: background-color 0.2s ease, color 0.2s ease, border-left 0.2s ease, padding-left 0.2s ease;
+}
+.api-nav-link:hover {
+    background-color: #e6f7f6; color: #0c6b61; 
+}
+
+/* Flowchart specific styles for Example Tab */
+.flowchart-block {
+    background-color: #f8fafc; /* slate-50 */
+    border: 1px solid #cbd5e1; /* slate-300 */
+    border-radius: 0.5rem; /* rounded-lg */
+    padding: 1rem; /* p-4 */
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%; 
+}
+.flowchart-block-text-io { 
+    min-height: 220px; 
+}
+.flowchart-block-api { 
+    max-width: 640px; 
+    padding: 1.25rem; 
+    margin-left: auto; margin-right: auto; 
+}
+.flowchart-block-process { 
+    min-height: 250px; 
+    justify-content: space-between; 
+}
+ .flowchart-block-nas-vertical { 
+    max-width: 320px; 
+    margin-left: auto; margin-right: auto;
+}
+.mapping-window-group-container {
+    background-color: #f0fdfa; /* teal-50 */
+    border: 1px dashed #99f6e4; /* teal-200 */
+    border-radius: 0.75rem; /* rounded-xl */
+    padding: 1.5rem; /* p-6 */
+    margin-top: 1rem;
+    margin-bottom: 1rem;
+}
+ 
+.flowchart-text-sm {
+    font-size: 0.875rem; 
+    color: #475569; 
+    line-height: 1.5;
+    margin-top: 0.5rem; 
+    flex-grow: 1; 
+}
+.text-preview-box { 
+    width: 100%;
+    background-color: #ffffff; 
+    border: 1px solid #d1d5db; 
+    border-radius: 0.375rem; 
+    padding: 0.75rem; 
+    margin-top: 0.5rem; 
+    font-size: 0.8rem; 
+    color: #374151; 
+    text-align: left;
+    line-height: 1.6;
+    max-height: 150px; 
+    overflow-y: auto;
+    flex-grow: 1; 
+}
+
+/* --- Updated Video Placeholder Styles --- */
+.video-placeholder { 
+    width: 100%; /* Occupy full width of its parent block */
+    background-color: #374151; /* Darker background for video contrast */
+    border-radius: 0.375rem; 
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: auto; 
+    color: #d1d5db; 
+    font-style: italic;
+    font-size: 0.875rem; /* For fallback text */
+    overflow: hidden; /* Crucial for video's rounded corners */
+    position: relative; /* For potential absolute positioning of custom controls later */
+}
+
+/* Default size for most video placeholders within process blocks */
+.flowchart-block-process .video-placeholder,
+.flowchart-block-nas-vertical .video-placeholder {
+    height: 220px; /* Increased height */
+    max-width: 400px; /* Increased max-width */
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/* Larger size for the main "Final VCS Score Video" placeholder */
+.flowchart-block.md\:col-span-2 .video-placeholder {
+    height: 400px; /* Significantly larger height */
+    max-width: 100%; /* Use full width of its container */
+}
+
+.video-placeholder video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover; /* Cover the area, may crop slightly */
+    border-radius: 0.375rem; /* Match parent's border-radius */
+    display: block; /* Remove extra space below video */
+}
+
+/* Hide placeholder text if video is present and set to autoplay */
+.video-placeholder:has(video[autoplay]) {
+    font-size: 0; /* Hide fallback text */
+    background-color: #1f2937; /* Even darker bg for better video pop */
+}
+/* --- End of Updated Video Placeholder Styles --- */
+
+
+.api-signature-block {
+    background-color: #1f2937; 
+    color: #d1d5db; 
+    padding: 1rem; 
+    border-radius: 0.375rem; 
+    font-size: 0.75rem; 
+    line-height: 1.6;
+    margin-top: 0.75rem; 
+    overflow-x: auto;
+    text-align: left;
+    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace;
+}
+.api-signature-block code { color: #9ca3af; }
+.api-signature-block .param-name { color: #60a5fa; } 
+.api-signature-block .param-type { color: #f472b6; } 
+.api-signature-block .default-val { color: #a3e635; } 
+.api-signature-block .comment { color: #6b7280; } 
+
+/* Connectors for new flowchart */
+.connector-wrapper { margin: 1rem 0; display: flex; flex-direction: column; align-items: center; }
+.connector-line { background-color: #99f6e4; /* teal-200 */ }
+.connector-arrow i { color: #0d9488; /* teal-600 */ font-size: 1.25rem; /* text-xl */ }
+.connector-arrow-styled {
+    padding: 0.375rem; 
+    background-color: #f0fdfa; /* teal-50 */
+    border-radius: 9999px; /* rounded-full */
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    display: inline-block; 
+}
+.nas-vertical-connector .connector-line { margin-left: auto; margin-right: auto; }
+.nas-vertical-connector.my-2 { 
+    margin-top: 0.5rem;
+    margin-bottom: 0.5rem;
+}

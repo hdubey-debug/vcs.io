@@ -1,0 +1,293 @@
+<div id="paperContent" class="tab-inner-content"> <article class="article-card">
+        <section id="hero-section">
+            <h1>Video Comprehension Score (VCS)</h1>
+            <p class="authors">Harsh Dubey<sup>1</sup>, Mukhtiar Ali<sup>1</sup>, Sugam Mishra<sup>1</sup>, Chulwoo Pack<sup>1</sup></p>
+            <p class="affiliation"><sup>1</sup>South Dakota State University</p>
+            <div class="enhanced-placeholder h-72 w-full max-w-xl my-8 mx-auto bg-teal-700/20 backdrop-blur-sm border border-teal-500/30">
+                <i class="fas fa-film fa-beat" style="--fa-animation-duration: 2s; --fa-beat-scale: 1.05;"></i>
+                <p class="font-semibold text-lg">Visualizing VCS in Action</p>
+                <p class="text-sm text-teal-100/80">(Conceptual Animation Placeholder)</p>
+            </div>
+        </section>
+        <div class="p-6 sm:p-8 lg:p-10">
+            <section id="abstract" class="content-section fade-in-section">
+                <h2>Abstract</h2>
+                <p>We introduce Video Comprehension Score (VCS), a novel metric for evaluating long-form video comprehension models by comparing generated long video descriptions against human-written references. Current evaluation metrics, including BLEU, ROUGE, METEOR, and CIDEr, rely primarily on rigid text-level comparisons, overlooking narrative coherence, temporal accuracy, and semantic equivalence. Moreover, existing LLM-based metrics such as Auto-DQ and VAD score are computationally expensive and lack sensitivity to event chronology, further complicating accurate evaluation. To address these limitations, VCS employs a unified semantic and temporal framework comprising three key components: Global Alignment Score (GAS), which assesses holistic narrative consistency; Local Alignment Score (LAS), which measures semantic alignment at the segment level; and Narrative Alignment Score (NAS), explicitly capturing temporal correctness. All components utilize robust nv-embed-v2 embeddings, ensuring precise and flexible evaluation from a single human reference. We validate VCS empirically using a synthetic MPII-based dataset containing both valid and invalid narrative variants. VCS significantly outperforms baseline metrics by clearly differentiating correct from incorrect paraphrases, achieving margins exceeding 15 percentage points. Additionally, VCS demonstrates state-of-the-art performance in short-caption evaluations on the VATEX benchmark, attaining the highest human correlation in the 9-reference setting (Kendall τb=41.5, Spearman ρ=51.8) and competitive results in the single-reference scenario, highlighting its broad applicability and effectiveness.</p>
+            </section>
+            <hr class="my-10 border-slate-200">
+            <section id="introduction" class="content-section fade-in-section">
+                <h2>1. Introduction</h2>
+                <p>Recent advancements in Large Video Language Models (LVLMs) have significantly advanced automated video understanding, enabling the generation of detailed, long-form narratives from complex video content [1-11]. This capability is essential for applications demanding nuanced interpretation, including autonomous and assistive technologies. However, effectively evaluating if these models genuinely comprehend a video's narrative events, entities, and interactions-remains challenging.</p>
+                <p>Current evaluation often relies on isolated fact-based question-answering tasks [12-14, 5, 15, 6, 16-21], which inadequately assess holistic comprehension. Traditional n-gram metrics (BLEU, METEOR, CIDER, ROUGE, SPICE) [22-26] suffer from the "many-to-one mapping" problem, penalizing stylistic and semantic variations by relying on lexical overlap, and inadequately evaluating narrative chronology. Though consensus-based solutions address the many-to-one mapping issue, generating extensive diverse references for long videos is prohibitively labor-intensive and impractical.</p>
+                <p>Embedding-based metrics (e.g., BERTScore [27]) improve semantic awareness but struggle with context limitations and structural complexity in evaluating lengthy narratives. Recent LLM-driven methods [28-30] offer semantic nuance but depend heavily on LLM accuracy and suffer from consistency and transparency issues. Critically, these methods often inadequately assess narrative structure and chronology.</p>
+                <p>Comprehensively scoring dense video narratives involves several interconnected challenges: (1) Many-to-one mapping, exacerbated by practical limitations in generating extensive human annotations. (2) Reconciling strict versus lenient content alignment-allowing valid descriptive variability, such as different event granularities or descriptive styles, while penalizing core distortions. (3) Balancing local chronology tolerance (flexibility in concurrent events or minor reordering) with intolerance (strict ordering of critical sequences). (4) Integrating global and local narrative assessments to detect significant structural misorderings despite locally correct segments, and vice versa.</p>
+                <p>This paper introduces the Video Comprehension Score (VCS), a novel metric addressing these complexities by evaluating dense, long-form video descriptions semantically and structurally. VCS employs Segment Any Text (SaT) [31] for semantic segmentation and nvEmbed [32] for chunk-level embeddings, comprising three components:</p>
+                <ul>
+                    <li>1. Global Alignment Score (GAS): Measures overall thematic similarity using full-text embeddings.</li>
+                    <li>2. Local Alignment Score (LAS): Assesses fine-grained semantic correspondence between chunks.</li>
+                    <li>3. Narrative Alignment Score (NAS): Evaluates chronological consistency, using a configurable LOCAL CHRONOLOGY Tolerance factor (LCT) to balance descriptive flexibility and strict narrative order.</li>
+                </ul>
+                <p>We combine GAS and LAS into a Semantic Alignment Score (SAS), representing semantic alignment across long paragraphs. Integrating SAS with NAS yields the comprehensive VCS metric, enabling clear assessment of narrative equivalence and comprehension between model-generated and human-written descriptions.</p>
+                <p>Additionally, we generalized VCS to VCS_short, applying the same principles at varying segment lengths, demonstrating its versatility for shorter captions.</p>
+                <p>Due to the absence of suitable annotated datasets for long-form dense descriptions-where human judgment becomes increasingly unreliable-we constructed a large-scale synthetic dataset (1390 descriptions, 500 words each, from MPII via ChatGPT) [33, 3]. Two test sets, a Comparison Test Set (27,800 description pairs with diverse valid/invalid variations) and a Multiple-Author Test Set (5560 variants from four LLMs), comprehensively evaluate VCS performance.</p>
+                <p>Benchmarked against traditional and adapted segment-based metrics (BLEU-S, METEOR-S, ROUGE-L-S), VCS consistently demonstrated robustness to valid narrative variability and sensitivity to invalid alterations. On VATEX-EVAL [34], VCS_short achieved state-of-the-art results in the 9-reference setting and was a close second in the 1-reference setting [35].</p>
+                <p>The results affirm VCS as a reliable metric capable of accurately assessing narrative equivalence across diverse descriptive styles and lengths, configurable for varying chronological rigor. In summary, our primary contributions include:</p>
+                <ul>
+                    <li>A versatile, robust metric (VCS) for evaluating dense and diverse video descriptions across varying lengths and styles.</li>
+                    <li>A configurable approach to balance semantic and chronological evaluation, adaptable to multiple applications.</li>
+                </ul>
+            </section>
+            <hr class="my-10 border-slate-200">
+            <section id="related-works" class="content-section fade-in-section">
+                <h2>2. Related Works</h2>
+                <p>Traditional n-gram-based metrics such as BLEU [22], ROUGE [25], and METEOR [23] evaluate text generation through lexical overlap and local word order. BLEU measures n-gram precision with brevity penalties, capturing local chronology but limited by rigid lexical matching. ROUGE variants emphasize recall; ROUGE-N evaluates n-gram overlap, while ROUGE-L utilizes the Longest Common Subsequence (LCS) at sentence-level, yet remains sensitive to lexical variation and sentence-length discrepancies. METEOR integrates lexical alignment via synonyms and stems, computing precision-recall harmonics with fragmentation penalties for local word order. CIDEr [24] addresses lexical variability by consensus-based TF-IDF weighting across multiple references but proves impractical for dense, long descriptions due to labor-intensive annotation. SPICE [26] evaluates semantic propositions using graph overlaps, effectively handling paraphrasing but neglecting fluency, grammar, and narrative chronology critical for video descriptions.</p>
+                <p>Embedding-based metrics compare texts in semantic vector spaces, leveraging pretrained models to capture semantic similarity beyond lexical matches. Early methods like BERTScore [27], MoverScore [36], and SBERT [37] recognize paraphrases but are constrained by limited context windows, complicating their direct application to extended narratives. Recent decoder-based models (e.g., nv-embed-v2 [32], Linq-Embed-Mistral [38], SFR-Embedding-Mistral [39], Jasper and Stella [40]) offer significantly larger context windows and robust global embeddings, excelling at paragraph-level semantic assessments. However, reliance on global embeddings and cosine similarity overlooks local content alignment, detailed information accuracy, and chronological coherence, allowing subtle inaccuracies or misordered events to remain undetected.</p>
+                <p>Multimodal embedding metrics like EMScore [34] and PAC-S [35] employ vision-language models (e.g., CLIP [41]) to evaluate semantic alignment between visuals and generated captions. EMScore combines coarse and fine-grained multimodal matches for accurate short-caption evaluation, whereas PAC-S, fine-tuned via contrastive learning, closely aligns with human judgments. Despite their effectiveness in short-form tasks, these metrics face computational challenges and methodological limitations when scaling to dense, extended narratives, struggling with complex chronology and segment-level coherence without significant adaptations.</p>
+                <p>Recent evaluation approaches increasinglyleverage Large Language Models (LLMs), categorized into component-based and holistic judge methods. Component-based methods (e.g., AutoDQ [28], VAD-Score [29]) use LLMs for semantic extraction and entailment checks, effectively addressing semantic variation and many-to-one mapping challenges; however, they do not evaluate chronology of events. Nonetheless, their effectiveness depends heavily on extraction accuracy, consistency across model updates, scalability with dense content, and reliance on comprehensive references. Conversely, holistic methods (e.g., ChatGPT-based scoring [3]) provide overall quality assessments directly from LLMs, theoretically addressing complex evaluation dimensions comprehensively. However, they suffer from ambiguity in score calibration, sensitivity to prompting nuances, consistency issues across model versions, limited interpretability, and practical constraints including reproducibility and cost.</p>
+            </section>
+            <hr class="my-10 border-slate-200">
+            <section id="methodology" class="content-section fade-in-section">
+                <h2>3. Methodology: Video Comprehension Score (VCS)</h2>
+                <p>Figure 1 illustrates the overall architecture of the Video Comprehension Score (VCS), a metric designed for the comprehensive evaluation of dense, long-form video descriptions. VCS assesses the quality of model-generated text (T_gen) against a reference text (T_ref) by quantifying both semantic and narrative alignment. This approach aims to surpass traditional n-gram-based metrics by specifically addressing challenges such as the "many-to-one mapping" problem and the critical aspect of event ordering for narrative coherence. The subsequent subsections detail the fundamental components, preprocessing techniques, and the suite of metrics that constitute the VCS.</p>
+                <div class="enhanced-placeholder h-96 w-full max-w-3xl">
+                    <i class="fas fa-project-diagram"></i>
+                    <p class="font-semibold">Figure 1: VCS Architecture</p>
+                    <p class="text-sm">(Refer to original PDF for actual image)</p>
+                </div>
+
+                <h3>3.1 Fundamental Components and Preprocessing</h3>
+                <h4>3.1.1 Core Technologies: Segmentation and Embedding</h4>
+                <p>VCS employs two core technologies. SaT [31] segments texts into granular semantic segments for robust comparison of potentially noisy inputs. Subsequently, nvEmbed[32] converts textual units (full texts and chunks) into high-dimensional vector embeddings, enabling quantitative similarity measurement.</p>
+                <h4>3.1.2 Text Preprocessing: Segmentation and Chunking for VCS</h4>
+                <p>For standard VCS (long-form descriptions), input texts T_ref and T_gen are cleaned, typically involving removal of punctuation and full stops. SaT [31] then segments these into sequences of semantic segments, S_ref and S_gen. To balance granularity and context, k consecutive segments form "chunks," resulting in sequences C_ref and C_gen. These chunks are embedded using nvEmbed[32] into matrix representations $E_{C_{ref}} \in \mathbb{R}^{N_{ref} \times D}$ and $E_{C_{gen}} \in \mathbb{R}^{N_{gen} \times D}$, crucial for LAS and NAS.</p>
+
+                <h3>3.2 VCS Metric Suite</h3>
+                <p>The following components (GAS, LAS, NAS) and aggregation methods form the basis of VCS and VCS_short.</p>
+                <h4>3.2.1 Global Alignment Score (GAS)</h4>
+                <p>GAS measures overall semantic similarity between T_ref and T_gen. Entire texts T_ref and T_gen are embedded via EmbedNV2[32] to yield E_ref and E_gen, respectively. GAS is their cosine similarity:</p>
+                <div class="equation">
+                    $$ \text{GAS} = \cos(E_{\text{ref}}, E_{\text{gen}}) = \frac{E_{\text{ref}} \cdot E_{\text{gen}}}{||E_{\text{ref}}|| \cdot ||E_{\text{gen}}||} \quad (1) $$
+                </div>
+                <p>GAS captures thematic congruence but overlooks local agreement and chronology, addressed by LAS (Section 3.2.3) and NAS (Section 3.2.4).</p>
+
+                <h4>3.2.2 Establishing Chunk Correspondences</h4>
+                <h5>Mapping Window Calculation</h5>
+                <p>Mapping Windows (MW) define permissible alignment ranges for chunks/words between T_ref and T_gen, accommodating length and detail variations. Based on element counts N_ref, N_gen (chunks or words), their ratio $r = \max(N_{\text{ref}}, N_{\text{gen}}) / \min(N_{\text{ref}}, N_{\text{gen}})$, and a base window height $h_{\text{mw}} = \lceil r \rceil$, VCS defines Precision Windows (MW_prec) for matching $c_j^{\text{gen}}$ to $c_i^{\text{ref}}$, and Recall Windows (MW_rec) for matching $c_i^{\text{ref}}$ to $c_j^{\text{gen}}$. These windows constrain the Best Matching Algorithm. Figure 2 illustrates MWs for cases of equal length, concise generation, and verbose generation.</p>
+                 <div class="enhanced-placeholder h-60 w-full max-w-3xl">
+                    <i class="fas fa-window-restore"></i>
+                    <p class="font-semibold">Figure 2: Mapping Windows Illustration</p>
+                    <p class="text-sm">(a) Ideal 1-to-1, (b) Concise T_gen, (c) Verbose T_gen. <br> (Refer to original PDF for actual image)</p>
+                </div>
+                <h5>Best Matching Algorithm</h5>
+                <p>The Best Matching Algorithm establishes robust one-to-one chunk/word correspondences, resolving semantic ambiguity and collisions inherent in naive highest-similarity pairing. For each source element, it identifies the maximum similarity ($M_j$). If $M_j$ exceeds a context cutoff (e.g., 0.6), an adaptive similarity margin (influenced by $M_j$) defines a candidate band. From candidates within this band, the one closest to its expected narrative position (defined by MW_prec or MW_rec) is selected. Ties are broken by highest raw similarity. This bidirectional process yields precision-oriented ($M_P$) and recall-oriented ($M_R$) best matches.</p>
+
+                <h4>3.2.3 Local Alignment Score (LAS)</h4>
+                <p>The Local Alignment Score (LAS) assesses fine-grained semantic quality, averaging cosine similarities of matched chunk/word pairs from Section 3.2.2. It computes precision-oriented LAS_P and recall-oriented LAS_R. The final LAS is their harmonic mean:</p>
+                <div class="equation">
+                    $\text{LAS}_P = \frac{\sum \text{Sim}(c_j^{\text{gen}}, c_{m(j)}^{\text{ref}})}{|M_P|} \quad (\text{if } |M_P| > 0, \text{ else } 0)$
+                </div>
+                <div class="equation">
+                    $\text{LAS}_R = \frac{\sum \text{Sim}(c_i^{\text{ref}}, c_{m(i)}^{\text{gen}})}{|M_R|} \quad (\text{if } |M_R| > 0, \text{ else } 0)$
+                </div>
+                <div class="equation">
+                    $$ \text{LAS} = F1(\text{LAS}_P, \text{LAS}_R) = \frac{2 \cdot \text{LAS}_P \cdot \text{LAS}_R}{\text{LAS}_P + \text{LAS}_R} \quad (\text{if } \text{LAS}_P + \text{LAS}_R > 0, \text{ else } 0) \quad (2) $$
+                </div>
+                <p>High LAS indicates strong local semantic agreement. LAS is somewhat sensitive to content gaps, though less so than NAS, and is insensitive to chronological order, motivating the Narrative Alignment Score (NAS) (Section 3.2.4).</p>
+
+                <h4>3.2.4 Narrative Alignment Score (NAS)</h4>
+                <p>The Narrative Alignment Score (NAS) evaluates narrative integrity and chronological coherence of T_gen against T_ref, addressing LAS's insensitivity to order and providing stronger penalties for structural discrepancies. For VCS_short, NAS assesses word order.</p>
+                <h5>Distance-based NAS (NAS_D)</h5>
+                <p>NAS_D assesses chronological alignment by penalizing deviations of matched elements (M_P, M_R) from expected positions within Mapping Windows. It is largely sensitive to global misalignments and somewhat to local misalignments and content gaps. For each match, an effective distance d'' (incorporating LCT) contributes to a total penalty $P_{\text{total},x}$. Normalizing by maximum possible penalty $P_{\text{max},x}$ (Fig. 3) yields NAS_DP and NAS_DR:</p>
+                <figure class="my-6 mx-auto" style="max-width: 1200px;"> <figcaption class="text-center mb-3">
+                        <span class="font-bold text-teal-700">Figure 2:</span> <span class="font-medium">Interactive Mapping Windows Demonstration (Distance NAS)</span>
+                    </figcaption>
+                <iframe
+                    src="widgets/distance-nas/index.html"
+                    class="w-full rounded-lg"
+                    style="height: 700px; border: 1px solid #e2e8f0;"
+                    title="Distance NAS Interactive Demo"
+                    loading="lazy"
+                    onerror="this.outerHTML='<div class=\'enhanced-placeholder h-60 w-full max-w-3xl\'><i class=\'fas fa-exclamation-triangle text-red-500\'></i><p class=\'font-semibold\'>Error Loading Widget</p><p class=\'text-sm\'>Interactive content could not be loaded here.</p></div>'"
+                ></iframe>
+                <p class="text-sm text-slate-600 mt-3 text-center">
+                    Mapping windows for (a) equal length (1:1), (b) concise generation, and (c) verbose generation scenarios. 
+                    Adjust chunk counts and drag markers to explore alignments. (Note: This iframe content might not load in this preview environment.)
+                </p>
+                </figure>
+                <div class="equation">
+                    $$ \text{NAS}_{Dx} = 1 - \frac{P_{\text{total},x}}{P_{\text{max},x}} \quad (\text{if } P_{\text{max},x} > 0) \quad \dots \quad (3) $$
+                </div>
+                <div class="equation">
+                    $$ \text{NAS}_D = F1(\text{NAS}_{DP}, \text{NAS}_{DR}) \quad (4) $$
+                </div>
+                <h5>Line-based NAS (NAS_L)</h5>
+                <p>NAS_L evaluates local chronological flow by analyzing the path of consecutive matched elements. It is highly sensitive to local chronology and content gaps. An ideal path lies within an "ideal narrative band". The actual path length ($L_{\text{actual},x}$) is penalized for deviations:</p>
+                 <figure class="my-6 mx-auto" style="max-width: 1100px;">
+                    <figcaption class="text-center mb-3">
+                        <span class="font-bold text-teal-700">Figure 2 (cont.):</span> <span class="font-medium">Interactive Mapping Windows Demonstration (Line NAS)</span>
+                    </figcaption>
+                    <iframe
+                        src="widgets/nas/index.html"
+                        class="w-full rounded-lg"
+                        style="height: 700px; border: 1px solid #e2e8f0;"
+                        title="Line NAS Interactive Demo"
+                        loading="lazy"
+                        onerror="this.outerHTML='<div class=\'enhanced-placeholder h-60 w-full max-w-3xl\'><i class=\'fas fa-exclamation-triangle text-red-500\'></i><p class=\'font-semibold\'>Error Loading Widget</p><p class=\'text-sm\'>Interactive content could not be loaded here.</p></div>'"
+                    ></iframe>
+                    <p class="text-sm text-slate-600 mt-3 text-center">
+                        Adjust chunk counts and drag markers to explore alignments for Line NAS. (Note: This iframe content might not load in this preview environment.)
+                    </p>
+                </figure>
+                <div class="equation">
+                    $$ \text{NAS}_{Lx} = \dots \quad (\text{complex conditions omitted for brevity}) \quad (5) $$
+                </div>
+                <div class="equation">
+                    $$ \text{NAS}_L = F1(\text{NAS}_{LP}, \text{NAS}_{LR}) \quad (6) $$
+                </div>
+                <h5>Local Chronology Tolerance (LCT)</h5>
+                <p>LCT (multiplier $\tau_{\text{LCT}} \ge 0$) allows configurable flexibility for benign local reorderings. In NAS_D, it widens permissible deviation. In NAS_L, it expands acceptable step variations. $\tau_{\text{LCT}} = 0$ enforces strict order.</p>
+                <h5>Final Narrative Alignment Score (NAS_F1)</h5>
+                <p>NAS_D (Eq. 4) and NAS_L (Eq. 6) are integrated via harmonic mean:</p>
+                <div class="equation">
+                    $$ \text{NAS}_{\text{F1}} = F1(\text{NAS}_D, \text{NAS}_L) \quad (7) $$
+                </div>
+                <h5>Window Regularizer for NAS (R_W)</h5>
+                <p>The Window Regularizer (R_W) adjusts NAS_F1 to mitigate influence from extreme text length disparities. It's calculated based on mapping window area relative to timeline area.</p>
+                <div class="equation">
+                     $$ \bar{R}_W = \max(0, \min(1, \frac{(A_{\text{total_mw}} / A_{\text{timeline}}) - A_{\text{min_ratio}}}{0.5 - A_{\text{min_ratio}}})) \quad (\text{8, simplified}) $$
+                </div>
+                <p>The regularized score NAS_reg is:</p>
+                <div class="equation">
+                     $$ \text{NAS}_{\text{reg}} = \frac{\text{NAS}_{\text{interim}}}{1 - R_W} \quad (\text{if } \text{NAS}_{\text{interim}} > 0 \text{ and } R_W < 1, \text{ else } 0) \quad (9) $$
+                     where $\text{NAS}_{\text{interim}} = \text{NAS}_{\text{F1}} - R_W$.
+                </div>
+
+                <h3>3.3 Aggregating Scores for the Final Video Comprehension Score (VCS)</h3>
+                <p>The final VCS or VCS_short integrates semantic and narrative alignment. GAS is modulated by LAS yielding the Semantic Alignment Score (SAS):</p>
+                <div class="equation">
+                    $$ \text{SAS} = \frac{\text{GAS} - (1 - \text{LAS})}{\text{LAS}} \quad (\text{if } \text{LAS} > 0 \text{ and } (\text{GAS} - (1 - \text{LAS})) > 0, \text{ else } 0.0) \quad (10) $$
+                </div>
+                <p>The score (VCS or VCS_short) synthesizes SAS with NAS_reg (Eq. 9). Let $S_{\text{num}}$ and $S_{\text{den}}$ be defined based on SAS and NAS_reg. The final score is:</p>
+                <div class="equation">
+                    $S_{\text{num}} = \text{SAS} - (1 - \text{NAS}_{\text{reg}}) \text{ if SAS} < \text{NAS}_{\text{reg}} \text{ else } \text{NAS}_{\text{reg}} - (1 - \text{SAS})$
+                </div>
+                 <div class="equation">
+                    $S_{\text{den}} = \text{NAS}_{\text{reg}} \text{ if SAS} < \text{NAS}_{\text{reg}} \text{ else } \text{SAS}$
+                </div>
+                <div class="equation">
+                    $$ \text{VCS (or VCS_short)} = \frac{S_{\text{num}}}{S_{\text{den}}} \quad (\text{if } S_{\text{num}} > 0 \text{ and } S_{\text{den}} \neq 0, \text{ else } 0.0) \quad (11) $$
+                </div>
+
+                <h3>3.4 VCS_short: Extension for Short Captions</h3>
+                <p>VCS can be adapted for evaluating short captions at the word level, termed VCS_short. The core metric suite and aggregation logic remain consistent. The primary distinction lies in text preprocessing.</p>
+                <h4>3.4.1 Text Preprocessing for VCS_short</h4>
+                <p>For VCS_short, input texts T_ref and T_gen are cleaned (remove punctuation, stop words) and tokenized into individual words. These words serve as fundamental "segments" and are embedded using nvEmbed[32].</p>
+            </section>
+            <hr class="my-10 border-slate-200">
+            <section id="experiments" class="content-section fade-in-section">
+                <h2>4. Experiments</h2>
+                <p>We conduct experiments to validate Video Comprehension Score (VCS) on large-scale synthetic datasets designed specifically to evaluate robustness in assessing long-form video descriptions. Our evaluation targets three core challenges: the many-to-one mapping problem, chronological accuracy (local and global), and precise content alignment.</p>
+                <p>We construct the synthetic dataset from the MPII Movie Description (MPII-MD) dataset [33], consisting of detailed audio descriptions temporally aligned with movie scenes. From MPII-MD's 94 movies, scene-level descriptions are aggregated into coherent narratives via ChatGPT-40 [3], generating 1,390 baseline descriptions averaging 500 words each.</p>
+                <p>To test robustness, we systematically produce two types of description variants using ChatGPT-40 [3]:</p>
+                <ul>
+                    <li><strong>Valid variants (12,510 total):</strong> include lexical/syntactic paraphrases, descriptive length and detail variations, granularity transformations, and attribute/emotion/scene enrichments.</li>
+                    <li><strong>Invalid variants:</strong> introduce deliberate errors in content alignment (redundant content, unrelated additions, content deletion, semantic corruption, complete incoherence, lossy summarization) and chronology (paragraph rotation, complete reversal, sentence shuffling, neighboring sentence swaps).</li>
+                </ul>
+                <p>Additionally, to simulate realistic multi-author variability, we generated a "Multiple-Author Test Set" by prompting four distinct LLMs (ChatGPT-40, Grok, Mistral, Claude) to independently rewrite each baseline scene description (yielding 5,560 descriptions). These models were instructed to preserve original narrative events and chronology but were free to introduce various valid stylistic transformations.</p>
+                <p>We benchmark VCS against established metrics, including traditional n-gram-based measures (BLEU-1/4 [22], ROUGE [25] variants and METEOR [23]) and novel segment-based semantic adaptations using SaT segmentation [31] and nv-embed-v2 [32] embeddings (Segment-BLEU, Segment-METEOR, Segment-ROUGE-L). Segment matching was established via cosine similarity thresholding (0.75).</p>
+                <p>For shorter descriptions, we evaluated VCS_short on VATEX-EVAL [34], correlating metric scores with human judgments (Kendall's $\tau_b$, Spearman's $\rho$) under single and multiple reference scenarios. We compared VCS_short to standard n-gram metrics (BLEU [22], ROUGE [25], METEOR [23], CIDEr [24]) and embedding-based metrics (BERTScore [27], BERTScore++ [42]), alongside multimodal embedding metrics (EMScore [34], PAC-S/RefPAC-S [35]).</p>
+            </section>
+            <hr class="my-10 border-slate-200">
+            <section id="results" class="content-section fade-in-section">
+                <h2>5. Results</h2>
+                <p>This section presents the performance comparison of VCS and other metrics. (Note: The tables below are simplified representations of Tables 1, 2, and 3 from the paper for web readability. For exact values and full details, please refer to the original PDF.)</p>
+
+                <h3>Table 1: Performance on Various Test Cases (Simplified)</h3>
+                <p>Table 1 in the paper shows VCS (GAS+LAS+NAS) generally achieving higher scores for valid test cases (e.g., Synonym, Passive, Verbosity, Brevity) and lower scores for invalid test cases (e.g., Deletion, Corruption, Reverse, Jumble) compared to traditional and enhanced metrics. This indicates better differentiation between correct and incorrect narrative variations.</p>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Metric</th>
+                                <th>Valid Case (e.g., Synonym) Avg.</th>
+                                <th>Invalid Case (e.g., Deletion) Avg.</th>
+                                <th>Invalid Case (e.g., Reverse) Avg.</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td>BLEU-1</td><td>~0.57</td><td>~0.08</td><td>~0.05</td></tr>
+                            <tr><td>ROUGE-Lsum</td><td>~0.83</td><td>~0.08</td><td>~0.02</td></tr>
+                            <tr><td>GAS+LAS+NAS (VCS)</td><td>~0.93</td><td>~0.05</td><td>~0.00</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <p class="text-sm italic text-slate-500">Standard deviations are omitted here for brevity.</p>
+
+                <h3>Table 2: Human Judgment Correlation on VATEX-EVAL (Simplified)</h3>
+                <p>Table 2 shows that VCS_short achieves high correlation with human judgments, particularly in the 9-reference setting on the VATEX-EVAL dataset.</p>
+                 <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Metric</th>
+                                <th>1-Ref Kendall $\tau_b$</th>
+                                <th>1-Ref Spearman $\rho$</th>
+                                <th>9-Refs Kendall $\tau_b$</th>
+                                <th>9-Refs Spearman $\rho$</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td>BLEU-4</td><td>12.6</td><td>16.4</td><td>22.4</td><td>29.5</td></tr>
+                            <tr><td>CIDEr</td><td>17.3</td><td>22.6</td><td>27.8</td><td>36.1</td></tr>
+                            <tr><td>EMScore</td><td>28.6</td><td>37.1</td><td>36.8</td><td>47.2</td></tr>
+                            <tr><td>PAC-S/RefPAC-S</td><td>31.4</td><td>40.5</td><td>38.1</td><td>48.8</td></tr>
+                            <tr><td>VCS_short</td><td>30.0</td><td>38.1</td><td>41.5</td><td>52.8</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <h3>Table 3: Performance Across Authorial Combinations (Simplified)</h3>
+                <p>Table 3 demonstrates VCS's consistent performance when comparing descriptions generated by different authors (LLMs), maintaining high scores for stylistically varied but semantically similar texts.</p>
+                <div class="table-container">
+                        <table>
+                        <thead>
+                            <tr>
+                                <th>Metric</th>
+                                <th>Author1-Author2 Avg.</th>
+                                <th>Author1-Author3 Avg.</th>
+                                <th>Author1-Author4 Avg.</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td>BLEU-1</td><td>~0.47</td><td>~0.81</td><td>~0.77</td></tr>
+                            <tr><td>ROUGE-Lsum</td><td>~0.56</td><td>~0.82</td><td>~0.84</td></tr>
+                            <tr><td>VCS</td><td>~0.85</td><td>~0.93</td><td>~0.91</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                 <p class="text-sm italic text-slate-500">Standard deviations are omitted here for brevity.</p>
+            </section>
+            
+            <hr class="my-10 border-slate-200">
+            <section id="references" class="content-section fade-in-section">
+                <h2>References</h2>
+                <p class="text-sm mb-4 text-slate-500">This is a partial list. For the complete list of references, please see the original PDF document.</p>
+                <ul class="text-xs space-y-1 text-slate-600">
+                    <li>[1] He, B., et al. (2024). Ma-Imm: Memory-augmented large multimodal model...</li>
+                    <li>[2] Chen, Z., et al. (2024). How far are we to gpt-4v?...</li>
+                    <li>[3] Achiam, J., et al. (2023). Gpt-4 technical report.</li>
+                    <li>[22] Papineni, K., et al. (2002). Bleu: a method for automatic evaluation...</li>
+                    <li>[23] Banerjee, S., & Lavie, A. (2005). Meteor: An automatic metric for mt evaluation...</li>
+                    <li>[24] Vedantam, R., et al. (2015). Cider: Consensus-based image description evaluation.</li>
+                    <li>[25] Lin, C.-Y. (2004). Rouge: A package for automatic evaluation of summaries.</li>
+                    <li>[27] Zhang, T., et al. (2019). Bertscore: Evaluating text generation with bert.</li>
+                    <li>[31] Frohmann, M., et al. (2024). Segment any text...</li>
+                    <li>[32] Lee, C., et al. (2024). Nv-embed: Improved techniques for training llms...</li>
+                    <li>[33] Rohrbach, A., et al. (2015). A dataset for movie description.</li>
+                    <li>[34] Shi, Y., et al. (2022). Emscore: Evaluating video captioning...</li>
+                    <li>[35] Sarto, S., et al. (2023). Positive-augmented contrastive learning...</li>
+                </ul>
+            </section>
+        </div>
+    </article>
+</div>

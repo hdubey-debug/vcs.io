@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Distance NAS Demo</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f2f5; 
+            display: flex;
+            flex-direction: column; 
+            align-items: center; 
+            min-height: 100vh;
+            padding: 24px; 
+            overflow-x: hidden;
+        }
+        .main-title {
+            font-size: 2rem; 
+            font-weight: 700; 
+            color: #1e293b; 
+            margin-bottom: 24px; 
+            text-align: center;
+        }
+
+        .app-container {
+            display: flex;
+            gap: 30px; 
+            width: 100%;
+            max-width: 1150px; 
+        }
+
+        .chart-column {
+            flex-grow: 1; 
+            position: relative; /* For positioning axis titles */
+            display: flex; 
+            justify-content: center; 
+        }
+        .y-axis-title {
+            position: absolute;
+            left: -55px; /* Adjusted for more space */
+            top: 50%;
+            transform: translateY(-50%) rotate(-90deg);
+            font-weight: 600;
+            color: #374151; /* slate-700 */
+            font-size: 0.9rem;
+            white-space: nowrap;
+        }
+        .x-axis-title {
+            position: absolute;
+            bottom: -65px; /* Moved further down, below numeric labels */
+            left: 50%;
+            transform: translateX(-50%);
+            font-weight: 600;
+            color: #374151; /* slate-700 */
+            font-size: 0.9rem;
+        }
+
+
+        .info-panel-column {
+            width: 350px; 
+            flex-shrink: 0; 
+            display: flex;
+            flex-direction: column;
+            gap: 24px; 
+        }
+
+        .controls-container, .nas-display-container {
+            background-color: #ffffff; 
+            padding: 24px; 
+            border-radius: 12px; 
+            box-shadow: 0 8px 16px rgba(0,0,0,0.05), 0 3px 6px rgba(0,0,0,0.07); 
+            display: flex; flex-direction: column; align-items: center; gap: 18px; 
+            width: 100%; 
+        }
+        .input-group {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+        }
+        .input-group label {
+            font-weight: 500;
+            color: #4b5563; 
+            font-size: 0.875rem; 
+            flex-basis: 55%; 
+        }
+        .input-group input[type="number"] {
+            width: 75px; 
+            padding: 8px 10px;
+            border: 1px solid #cbd5e1; 
+            border-radius: 8px; 
+            text-align: center;
+            font-size: 0.875rem;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .input-group input[type="number"]:focus {
+            outline: none;
+            border-color: #60a5fa; 
+            box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.3);
+        }
+
+        .lct-label-container {
+            display: flex; justify-content: space-between; width: 100%; align-items: center;
+        }
+        .controls-container label.lct-main-label, .nas-display-container h3 { 
+            font-weight: 600; color: #1e293b; font-size: 1.05rem; 
+        }
+        .nas-display-container h3 {
+            margin-bottom: 12px; text-align: center; width: 100%;
+            border-bottom: 1px solid #e2e8f0; padding-bottom: 12px; font-size: 1.125rem; 
+        }
+        .nas-item {
+            display: flex; justify-content: space-between; width: 100%;
+            font-size: 0.9rem; padding: 6px 0; 
+        }
+        .nas-item span:first-child { color: #475569; } 
+        .nas-item span:last-child { font-weight: 600; color: #2563eb; } 
+
+        .lct-value-display {
+            font-weight: 600; color: #2563eb; font-size: 1rem; background-color: #dbeafe; 
+            padding: 5px 10px; border-radius: 8px;
+        }
+        input[type="range"] {
+            -webkit-appearance: none; appearance: none; width: 100%; height: 10px; 
+            background: #e2e8f0; 
+            border-radius: 6px; outline: none; opacity: 0.85;
+            transition: opacity .15s ease-in-out;
+        }
+        input[type="range"]:hover { opacity: 1; }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none; appearance: none; width: 22px; height: 22px; 
+            background: #3b82f6; 
+            border-radius: 50%; cursor: pointer;
+            border: 4px solid #ffffff; 
+            box-shadow: 0 3px 6px rgba(0,0,0,0.15), 0 1px 2px rgba(0,0,0,0.1); 
+        }
+        input[type="range"]::-moz-range-thumb {
+            width: 22px; height: 22px; background: #3b82f6; border-radius: 50%;
+            cursor: pointer; border: 4px solid #ffffff; box-shadow: 0 3px 6px rgba(0,0,0,0.15);
+        }
+        .lct-range-hint {
+            font-size: 0.8rem; color: #64748b; width: 100%; text-align: center; margin-top: -6px;
+        }
+
+        .chart-container {
+            position: relative; width: 600px; 
+            height: 600px; 
+            background-color: #ffffff; 
+            border-radius: 12px; box-shadow: 0 10px 20px rgba(0,0,0,0.04), 0 2px 6px rgba(0,0,0,0.04); 
+            padding: 40px; border: 1px solid #e2e8f0; 
+            margin: 0 auto; 
+        }
+        .axis-label { 
+            position: absolute; 
+            font-size: 0.75rem; 
+            color: #64748b; 
+            font-weight: 400; 
+            white-space: nowrap; 
+        }
+
+        .ideal-mapping-window { 
+            position: absolute; border: 1px solid #34d399; 
+            background-color: rgba(52, 211, 153, 0.3); 
+            box-sizing: border-box; z-index: 0;
+            transition: all 0.3s ease-out;
+        }
+        .padding-box { 
+            position: absolute; background-color: rgba(250, 204, 21, 0.3);  
+            box-sizing: border-box; z-index: 1; transition: all 0.2s ease-out;
+        }
+        .padding-box-container {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1;
+        }
+
+        .gen-chunk-marker {
+            position: absolute;
+            background-color: #f43f5e; color: white; border: 2px solid #e11d48; 
+            border-radius: 8px; display: flex; flex-direction: column;
+            align-items: center; justify-content: center; font-size: 0.7rem;
+            font-weight: 600; cursor: grab; user-select: none; z-index: 10;
+            transition: background-color 0.2s, transform 0.1s ease-out, left 0.2s, bottom 0.2s, width 0.2s, height 0.2s; 
+            padding: 2px; box-sizing: border-box; text-align: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1); 
+        }
+        .gen-chunk-marker.dragging {
+            background-color: #fb7185; opacity: 0.85; cursor: grabbing; transform: scale(1.12); 
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2); 
+        }
+        .penalty-text { font-size: 0.65rem; margin-top: 2px; color: #fda4af; }
+        
+        .grid-cell-overlay {
+            position: absolute;
+            z-index: 5; 
+        }
+        .grid-cell-overlay.drag-over {
+            background-color: rgba(96, 165, 250, 0.1); 
+            border: 1px dashed #60a5fa; 
+            z-index: 7; 
+            border-radius: 4px; 
+        }
+    </style>
+</head>
+<body>
+    <h1 class="main-title">Distance NAS Interactive Demo</h1>
+    <div class="app-container">
+        <div class="chart-column">
+            <div class="y-axis-title">Reference Chunks</div>
+            <div class="chart-container" id="chartGrid">
+                <div id="paddingBoxContainer" class="padding-box-container"></div>
+                <div id="idealMappingContainer"></div>
+                <div id="dropTargetCellContainer"></div> 
+                <div id="genChunkMarkerContainer"></div>
+                <div id="axisLabelContainerY"></div>
+                <div id="axisLabelContainerX"></div>
+            </div>
+            <div class="x-axis-title">Generated Chunks</div>
+        </div>
+
+        <div class="info-panel-column">
+            <div class="controls-container">
+                <div class="input-group">
+                    <label for="refLenInput">Ref Chunks (Y-axis):</label>
+                    <input type="number" id="refLenInput" min="1" max="10" value="9">
+                </div>
+                <div class="input-group">
+                    <label for="genLenInput">Gen Chunks (X-axis):</label>
+                    <input type="number" id="genLenInput" min="1" max="10" value="9">
+                </div>
+                <hr class="w-full my-2 border-gray-300"> 
+                <div class="lct-label-container">
+                    <label for="lctSlider" class="lct-main-label">LCT Parameter:</label>
+                    <span id="lctValueDisplay" class="lct-value-display">1</span>
+                </div>
+                <input type="range" id="lctSlider" min="0" max="8" value="1"> 
+                <span class="lct-range-hint">(Tolerance: 0-8 blocks)</span>
+            </div>
+
+            <div class="nas-display-container">
+                <h3>Score Overview</h3>
+                <div class="nas-item">
+                    <span>Max Possible Penalty:</span>
+                    <span id="maxPenaltyDisplay">-</span>
+                </div>
+                <div class="nas-item">
+                    <span>Total Actual Penalty:</span>
+                    <span id="totalActualPenaltyDisplay">-</span>
+                </div>
+                <div class="nas-item">
+                    <span>Distance NAS:</span>
+                    <span id="nasScoreDisplay" class="font-bold text-lg">-</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const chartGrid = document.getElementById('chartGrid');
+        const paddingBoxContainer = document.getElementById('paddingBoxContainer');
+        const idealMappingContainer = document.getElementById('idealMappingContainer');
+        const genChunkMarkerContainer = document.getElementById('genChunkMarkerContainer');
+        const dropTargetCellContainer = document.getElementById('dropTargetCellContainer');
+        const axisLabelContainerX = document.getElementById('axisLabelContainerX');
+        const axisLabelContainerY = document.getElementById('axisLabelContainerY');
+
+
+        const lctSlider = document.getElementById('lctSlider');
+        const lctValueDisplay = document.getElementById('lctValueDisplay');
+        const refLenInput = document.getElementById('refLenInput');
+        const genLenInput = document.getElementById('genLenInput');
+            
+        const maxPenaltyDisplay = document.getElementById('maxPenaltyDisplay');
+        const totalActualPenaltyDisplay = document.getElementById('totalActualPenaltyDisplay');
+        const nasScoreDisplay = document.getElementById('nasScoreDisplay');
+
+        let numUnitsY = parseInt(refLenInput.value, 10); 
+        let numUnitsX = parseInt(genLenInput.value, 10); 
+        
+        let markers_config = []; 
+        let currentPrecisionWindows = []; 
+
+        function get_mapping_windows_js(refLen, genLen) {
+            const isRefLonger = refLen >= genLen;
+            const longerLen = isRefLonger ? refLen : genLen;
+            const shorterLen = isRefLonger ? genLen : refLen;
+
+            if (shorterLen === 0) return { precision_windows: [], recall_windows: [] };
+
+            const slope = longerLen / shorterLen;
+            const mappingWindowHeight = Math.ceil(slope);
+
+            let direct_windows = [];
+            for (let i = 0; i < shorterLen; i++) {
+                const idx_point = i * slope;
+                const start = Math.max(Math.floor(idx_point), 0);
+                const end = Math.min(start + mappingWindowHeight, longerLen);
+                direct_windows.push({ start: start, end: end });
+            }
+
+            let reverse_windows = [];
+            for (let longIdx = 0; longIdx < longerLen; longIdx++) {
+                let shortIndices = [];
+                direct_windows.forEach((dw, shortIdx) => {
+                    if (dw.start <= longIdx && longIdx < dw.end) {
+                        shortIndices.push(shortIdx);
+                    }
+                });
+                if (shortIndices.length > 0) {
+                    reverse_windows.push({ start: Math.min(...shortIndices), end: Math.max(...shortIndices) + 1 });
+                } else {
+                    if (direct_windows.length > 0) {
+                        if (longIdx < direct_windows[0].start) reverse_windows.push({ start: 0, end: 1});
+                        else reverse_windows.push({ start: shorterLen -1, end: shorterLen});
+                    } else { 
+                        reverse_windows.push({ start: 0, end: 0});
+                    }
+                }
+            }
+            
+            let precision_windows, recall_windows;
+            if (isRefLonger) {
+                precision_windows = direct_windows; 
+                recall_windows = reverse_windows;   
+            } else {
+                recall_windows = direct_windows;     
+                precision_windows = reverse_windows; 
+            }
+            return { precision_windows, recall_windows };
+        }
+        
+        function calculate_lct_window_js(y_axis, x_axis) {
+            if (x_axis === 0) return 0;
+            const mapping_window_height_ceil = Math.ceil(y_axis / x_axis);
+            const ratio = y_axis / x_axis;
+            const ratio_decimal_part = ratio - Math.floor(ratio);
+
+            let lct_w;
+            if (y_axis <= x_axis) {
+                lct_w = mapping_window_height_ceil;
+            } else {
+                if (ratio_decimal_part > 0 && ratio_decimal_part <= 0.5) {
+                    lct_w = mapping_window_height_ceil - 1;
+                } else {
+                    lct_w = mapping_window_height_ceil;
+                }
+            }
+            return Math.max(1, lct_w); 
+        }
+
+
+        function calculate_penalty_for_marker(markerX, markerY, lct, idealWindow) {
+            if (!idealWindow) return 1.0; 
+
+            let dist;
+            if (markerY >= idealWindow.start && markerY < idealWindow.end) {
+                dist = 0; 
+            } else if (markerY < idealWindow.start) {
+                dist = idealWindow.start - markerY;
+            } else { 
+                dist = markerY - (idealWindow.end - 1);
+            }
+            
+            const base_lct_unit_height = calculate_lct_window_js(numUnitsY, numUnitsX);
+            const tolerance = lct * base_lct_unit_height;
+            const effective_dist = (dist <= tolerance) ? 0 : dist;
+            
+            return numUnitsY > 0 ? effective_dist / numUnitsY : 0;
+        }
+
+        function calculate_max_penalty_js() {
+            let sum_max_dist = 0;
+            if (!currentPrecisionWindows || currentPrecisionWindows.length === 0) return 0;
+
+            currentPrecisionWindows.forEach(window => {
+                const dist_down = window.start; 
+                const dist_up = (numUnitsY - 1) - (window.end - 1); 
+                sum_max_dist += Math.max(dist_down, dist_up);
+            });
+            return numUnitsY > 0 ? sum_max_dist / numUnitsY : 0.0;
+        }
+        
+        function updateGridBackground() {
+            chartGrid.style.backgroundImage = `
+                linear-gradient(to right, #e2e8f0 1px, transparent 1px), 
+                linear-gradient(to bottom, #e2e8f0 1px, transparent 1px)
+            `; 
+            chartGrid.style.backgroundSize = `calc(100% / ${numUnitsX}) calc(100% / ${numUnitsY})`;
+        }
+
+        function renderIdealMappingWindows() {
+            idealMappingContainer.innerHTML = '';
+            currentPrecisionWindows.forEach((window, gen_chunk_idx) => {
+                const idealWindowDiv = document.createElement('div');
+                idealWindowDiv.classList.add('ideal-mapping-window');
+                idealWindowDiv.style.left = `calc(${gen_chunk_idx} * 100% / ${numUnitsX})`;
+                idealWindowDiv.style.width = `calc(100% / ${numUnitsX})`;
+                idealWindowDiv.style.bottom = `calc(${window.start} * 100% / ${numUnitsY})`;
+                idealWindowDiv.style.height = `calc(${(window.end - window.start)} * 100% / ${numUnitsY})`;
+                idealMappingContainer.appendChild(idealWindowDiv);
+            });
+        }
+
+        function renderPadding() {
+            paddingBoxContainer.innerHTML = '';
+            const lctValue = parseInt(lctSlider.value, 10);
+            lctValueDisplay.textContent = lctValue;
+            if (lctValue === 0 || !currentPrecisionWindows) return;
+
+            const base_lct_unit_height = calculate_lct_window_js(numUnitsY, numUnitsX);
+
+            currentPrecisionWindows.forEach((idealWindow, gen_chunk_idx) => {
+                const paddedAreaBottomGrid = Math.max(0, idealWindow.start - (lctValue * base_lct_unit_height));
+                const paddedAreaTopGrid = Math.min(numUnitsY -1 , (idealWindow.end -1) + (lctValue * base_lct_unit_height));
+                
+                const actualPaddingHeightGridUnits = (paddedAreaTopGrid - paddedAreaBottomGrid) + 1;
+
+                if (actualPaddingHeightGridUnits <= 0) return;
+
+                const paddingDiv = document.createElement('div');
+                paddingDiv.classList.add('padding-box');
+                paddingDiv.style.left = `calc(${gen_chunk_idx} * 100% / ${numUnitsX})`;
+                paddingDiv.style.width = `calc(100% / ${numUnitsX})`;
+                paddingDiv.style.bottom = `calc(${paddedAreaBottomGrid} * 100% / ${numUnitsY})`;
+                paddingDiv.style.height = `calc(${actualPaddingHeightGridUnits} * 100% / ${numUnitsY})`;
+                paddingBoxContainer.appendChild(paddingDiv);
+            });
+        }
+            
+        function renderGenChunkMarkersAndScores() {
+            genChunkMarkerContainer.innerHTML = '';
+            const lctValue = parseInt(lctSlider.value, 10);
+            let current_total_actual_penalty = 0;
+
+            markers_config.forEach(markerData => {
+                const markerDiv = document.createElement('div');
+                markerDiv.classList.add('gen-chunk-marker');
+                markerDiv.setAttribute('draggable', 'true');
+                markerDiv.dataset.id = markerData.id; 
+
+                markerDiv.style.width = `calc(100% / ${numUnitsX} - 4px)`;
+                markerDiv.style.height = `calc(100% / ${numUnitsY} - 4px)`;
+                markerDiv.style.left = `calc(${markerData.currentX} * 100% / ${numUnitsX} + 2px)`;
+                markerDiv.style.bottom = `calc(${markerData.currentY} * 100% / ${numUnitsY} + 2px)`;
+
+                const idealWindow = currentPrecisionWindows[markerData.currentX]; 
+                const penalty = calculate_penalty_for_marker(markerData.currentX, markerData.currentY, lctValue, idealWindow);
+                current_total_actual_penalty += penalty;
+                
+                markerDiv.innerHTML = `<div>ID: ${markerData.id}</div><div class="penalty-text">P: ${penalty.toFixed(2)}</div>`;
+                markerDiv.addEventListener('dragstart', handleDragStart);
+                genChunkMarkerContainer.appendChild(markerDiv);
+            });
+
+            const MAX_PENALTY_NORMALIZED = calculate_max_penalty_js(); 
+            maxPenaltyDisplay.textContent = MAX_PENALTY_NORMALIZED.toFixed(3);
+            totalActualPenaltyDisplay.textContent = current_total_actual_penalty.toFixed(3);
+            const nas_score = MAX_PENALTY_NORMALIZED > 0 ? (1 - (current_total_actual_penalty / MAX_PENALTY_NORMALIZED)) : 0;
+            nasScoreDisplay.textContent = Math.max(0, Math.min(1, nas_score)).toFixed(3); 
+        }
+
+        function renderDropTargetCells() {
+            dropTargetCellContainer.innerHTML = '';
+            for (let y_idx = 0; y_idx < numUnitsY; y_idx++) {
+                for (let x_idx = 0; x_idx < numUnitsX; x_idx++) {
+                    const cell = document.createElement('div');
+                    cell.classList.add('grid-cell-overlay');
+                    cell.dataset.x = x_idx;
+                    cell.dataset.y = y_idx;
+                    cell.style.width = `calc(100% / ${numUnitsX})`;
+                    cell.style.height = `calc(100% / ${numUnitsY})`;
+                    cell.style.left = `calc(${x_idx} * 100% / ${numUnitsX})`;
+                    cell.style.bottom = `calc(${y_idx} * 100% / ${numUnitsY})`;
+                    cell.addEventListener('dragover', handleDragOver);
+                    cell.addEventListener('dragleave', handleDragLeave);
+                    cell.addEventListener('drop', handleDrop);
+                    dropTargetCellContainer.appendChild(cell);
+                }
+            }
+        }
+        
+        function renderAxisLabels() {
+            axisLabelContainerX.innerHTML = '';
+            axisLabelContainerY.innerHTML = '';
+            const maxGridIndexX = numUnitsX - 1;
+            const maxGridIndexY = numUnitsY - 1;
+            
+            const yStep = Math.max(1, Math.floor(numUnitsY / 8)) || 1; 
+            const xStep = Math.max(1, Math.floor(numUnitsX / 8)) || 1;
+
+            // Y-Axis Numeric Labels
+            for (let i = 0; i <= maxGridIndexY; i += yStep ) { 
+                const tickLabel = document.createElement('div');
+                tickLabel.classList.add('axis-label');
+                tickLabel.textContent = i;
+                tickLabel.style.left = '-35px'; 
+                tickLabel.style.bottom = `calc(${i} * 100% / ${numUnitsY} + (50% / ${numUnitsY}))`; 
+                tickLabel.style.transform = 'translateY(50%)'; 
+                axisLabelContainerY.appendChild(tickLabel);
+            }
+             if (maxGridIndexY > 0 && (maxGridIndexY % yStep !== 0 || numUnitsY <= 8 && numUnitsY > 1)) { 
+                if (!axisLabelContainerY.querySelector(`.axis-label[data-value='${maxGridIndexY}']`)) { // Avoid duplicate last label
+                    const tickLabel = document.createElement('div');
+                    tickLabel.classList.add('axis-label');
+                    tickLabel.dataset.value = maxGridIndexY;
+                    tickLabel.textContent = maxGridIndexY;
+                    tickLabel.style.left = '-35px';
+                    tickLabel.style.bottom = `calc(${maxGridIndexY} * 100% / ${numUnitsY} + (50% / ${numUnitsY}))`;
+                    tickLabel.style.transform = 'translateY(50%)';
+                    axisLabelContainerY.appendChild(tickLabel);
+                }
+            }
+
+
+            // X-Axis Numeric Labels
+            for (let i = 0; i <= maxGridIndexX; i += xStep ) { 
+                const tickLabel = document.createElement('div');
+                tickLabel.classList.add('axis-label');
+                tickLabel.textContent = i;
+                tickLabel.style.bottom = '-30px'; 
+                tickLabel.style.left = `calc(${i} * 100% / ${numUnitsX} + (50% / ${numUnitsX}))`;
+                tickLabel.style.transform = 'translateX(-50%)'; 
+                axisLabelContainerX.appendChild(tickLabel);
+            }
+            if (maxGridIndexX > 0 && (maxGridIndexX % xStep !== 0 || numUnitsX <= 8 && numUnitsX > 1)) { 
+                 if (!axisLabelContainerX.querySelector(`.axis-label[data-value='${maxGridIndexX}']`)) { // Avoid duplicate last label
+                    const tickLabel = document.createElement('div');
+                    tickLabel.classList.add('axis-label');
+                    tickLabel.dataset.value = maxGridIndexX;
+                    tickLabel.textContent = maxGridIndexX;
+                    tickLabel.style.bottom = '-30px';
+                    tickLabel.style.left = `calc(${maxGridIndexX} * 100% / ${numUnitsX} + (50% / ${numUnitsX}))`;
+                    tickLabel.style.transform = 'translateX(-50%)';
+                    axisLabelContainerX.appendChild(tickLabel);
+                }
+            }
+        }
+
+
+        let draggedMarkerId = null;
+        function handleDragStart(e) {
+            draggedMarkerId = parseInt(e.target.dataset.id, 10);
+            e.target.classList.add('dragging');
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/plain', draggedMarkerId); 
+        }
+        function handleDragOver(e) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            if (e.currentTarget.classList.contains('grid-cell-overlay')) {
+                e.currentTarget.classList.add('drag-over');
+            }
+        }
+        function handleDragLeave(e) {
+            if (e.currentTarget.classList.contains('grid-cell-overlay')) {
+                e.currentTarget.classList.remove('drag-over');
+            }
+        }
+        function handleDrop(e) {
+            e.preventDefault();
+            if (!e.currentTarget.classList.contains('grid-cell-overlay')) return;
+            e.currentTarget.classList.remove('drag-over');
+            
+            const targetX = parseInt(e.currentTarget.dataset.x, 10);
+            const targetY = parseInt(e.currentTarget.dataset.y, 10);
+
+            const draggedMarkerData = markers_config.find(m => m.id === draggedMarkerId);
+            if (!draggedMarkerData) return;
+
+            const oldX = draggedMarkerData.currentX;
+            
+            const markerAtTargetXColumn = markers_config.find(m => m.currentX === targetX && m.id !== draggedMarkerId);
+            if (markerAtTargetXColumn && targetX !== oldX) { 
+                markerAtTargetXColumn.currentX = oldX;
+            }
+            
+            draggedMarkerData.currentX = targetX;
+            draggedMarkerData.currentY = targetY;
+            
+            const markerElement = genChunkMarkerContainer.querySelector(`.gen-chunk-marker[data-id='${draggedMarkerId}']`);
+            if(markerElement) markerElement.classList.remove('dragging');
+
+            renderAll(); 
+        }
+        
+        function initializeStateAndRender() {
+            numUnitsY = parseInt(refLenInput.value, 10) || 1; 
+            numUnitsX = parseInt(genLenInput.value, 10) || 1; 
+            refLenInput.value = numUnitsY; 
+            genLenInput.value = numUnitsX;
+
+            const windows = get_mapping_windows_js(numUnitsY, numUnitsX);
+            currentPrecisionWindows = windows.precision_windows;
+
+            markers_config = [];
+            for(let i = 0; i < numUnitsX; i++) {
+                const idealYStart = (currentPrecisionWindows[i] && currentPrecisionWindows[i].start !== undefined) 
+                                    ? currentPrecisionWindows[i].start 
+                                    : Math.floor(numUnitsY / 2); 
+                markers_config.push({ id: i, currentX: i, currentY: Math.min(idealYStart, numUnitsY - 1) });
+            }
+            
+            lctSlider.max = Math.max(0, numUnitsY -1); 
+            if (parseInt(lctSlider.value) > parseInt(lctSlider.max)) {
+                lctSlider.value = lctSlider.max;
+            }
+            lctValueDisplay.textContent = lctSlider.value;
+
+
+            updateGridBackground();
+            renderIdealMappingWindows();
+            renderDropTargetCells(); 
+            renderAxisLabels();
+            renderAll(); 
+        }
+        
+        function renderAll() {
+            renderPadding(); 
+            renderGenChunkMarkersAndScores(); 
+        }
+
+        lctSlider.addEventListener('input', renderAll);
+        refLenInput.addEventListener('change', initializeStateAndRender);
+        genLenInput.addEventListener('change', initializeStateAndRender);
+
+        initializeStateAndRender(); 
+
+        </script>
+    </div>
+</body>
+</html>

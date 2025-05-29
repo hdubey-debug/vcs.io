@@ -1,0 +1,1170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Line NAS Interactive Demo</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: transparent; /* Changed for iframe embedding */
+            min-height: 100vh;
+            margin: 0; /* Remove default margin */
+            padding: 10px; /* Reduced padding for embedding */
+            overflow-x: hidden;
+        }
+        
+        /* Adjust main title for embedding */
+        .main-title {
+            font-size: 1.4rem; /* Reduced from 1.75rem */
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 16px; /* Reduced from 20px */
+            text-align: center;
+        }
+
+        .controls-container, .line-lengths-container {
+            background-color: #ffffff; 
+            padding: 16px; /* Reduced from 20px */
+            border-radius: 12px; 
+            box-shadow: 0 6px 12px rgba(0,0,0,0.04), 0 2px 4px rgba(0,0,0,0.05); 
+            display: flex; flex-direction: column; align-items: center; gap: 14px; /* Reduced gap */
+            width: 100%; 
+        }
+        .input-group {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+        }
+        .input-group label, .line-lengths-container .info-item span:first-child, .lct-label-container label {
+            font-weight: 500;
+            color: #4b5563;
+            font-size: 0.8rem; /* Reduced from 0.85rem */
+        }
+        .input-group label.lct-main-label {
+            flex-basis: auto;
+        }
+
+        .input-group input[type="number"] {
+            width: 65px; /* Reduced from 70px */
+            padding: 6px 8px; /* Reduced padding */
+            border: 1px solid #cbd5e1;
+            border-radius: 7px;
+            text-align: center;
+            font-size: 0.8rem; /* Reduced from 0.85rem */
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .input-group input[type="number"]:focus {
+            outline: none;
+            border-color: #60a5fa;
+            box-shadow: 0 0 0 2.5px rgba(96, 165, 250, 0.3);
+        }
+        .line-lengths-container h3 {
+            font-weight: 600; color: #1e293b; font-size: 1rem; /* Reduced from 1.05rem */
+            margin-bottom: 8px; text-align: center; width: 100%;
+            border-bottom: 1px solid #e2e8f0; padding-bottom: 8px; 
+        }
+        .line-lengths-container .info-item {
+            display: flex; justify-content: space-between; width: 100%;
+            font-size: 0.8rem; /* Reduced from 0.875rem */
+            padding: 4px 0; 
+        }
+        .line-lengths-container .info-item span:last-child {
+            font-weight: 600; color: #2563eb; 
+        }
+        .lct-label-container {
+            display: flex; justify-content: space-between; width: 100%; align-items: center;
+        }
+        .lct-value-display {
+            font-weight: 600; color: #1d4ed8; font-size: 0.9rem; /* Reduced from 0.95rem */
+            background-color: #e0e7ff; 
+            padding: 3px 8px; border-radius: 7px;
+        }
+        input[type="range"] {
+            -webkit-appearance: none; appearance: none; width: 100%; height: 8px;
+            background: #e2e8f0; 
+            border-radius: 5px; outline: none; opacity: 0.85;
+            transition: opacity .15s ease-in-out; margin-top: 6px;
+        }
+        input[type="range"]:hover { opacity: 1; }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none; appearance: none; width: 18px; height: 18px; /* Reduced from 20px */
+            background: #3b82f6; 
+            border-radius: 50%; cursor: pointer;
+            border: 3px solid #ffffff; 
+            box-shadow: 0 2px 5px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.08); 
+        }
+        input[type="range"]::-moz-range-thumb {
+            width: 18px; height: 18px; background: #3b82f6; border-radius: 50%;
+            cursor: pointer; border: 3px solid #ffffff; box-shadow: 0 2px 5px rgba(0,0,0,0.12);
+        }
+        .lct-range-hint {
+            font-size: 0.7rem; /* Reduced from 0.75rem */
+            color: #64748b; width: 100%; text-align: center; margin-top: -8px;
+        }
+
+        .chart-container {
+            position: relative;
+            width: 100%; 
+            aspect-ratio: 1 / 1; 
+            max-width: 500px; /* Reduced from 600px for embedding */
+            background-color: #ffffff; 
+            border-radius: 12px; box-shadow: 0 8px 16px rgba(0,0,0,0.03), 0 2px 5px rgba(0,0,0,0.03); 
+            padding: 0; 
+            border: 1px solid #e2e8f0; 
+            margin: 0 auto; 
+            overflow: hidden; 
+        }
+        .axis-label { 
+            position: absolute; 
+            font-size: 0.65rem; /* Reduced from 0.7rem */
+            color: #64748b; 
+            font-weight: 400; 
+            white-space: nowrap; 
+            z-index: 20; 
+        }
+
+        .ideal-mapping-window { 
+            position: absolute; border: 1px solid #34d399; 
+            background-color: rgba(52, 211, 153, 0.15); 
+            box-sizing: border-box; z-index: 0;
+            transition: all 0.3s ease-out;
+        }
+
+        .gen-chunk-marker {
+            position: absolute;
+            background-color: #f43f5e; 
+            color: white; 
+            border: 1.5px solid #be123c; 
+            border-radius: 7px; 
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            font-weight: 600; cursor: grab; user-select: none; z-index: 10;
+            transition: background-color 0.2s, transform 0.1s ease-out, box-shadow 0.1s, left 0.2s, bottom 0.2s, width 0.2s, height 0.2s; 
+            padding: 1px 3px; 
+            box-sizing: border-box; text-align: center;
+            box-shadow: 0 1.5px 3px rgba(0,0,0,0.1); 
+            font-size: 0.6rem; /* Reduced from 0.65rem */
+            line-height: 1.1; 
+        }
+        .gen-chunk-marker .marker-id {
+            font-size: 0.7rem; /* Reduced from 0.75rem */
+        }
+        .gen-chunk-marker .marker-dy {
+            font-size: 0.55rem; /* Reduced from 0.6rem */
+            color: #fecaca; 
+        }
+
+        .gen-chunk-marker.dragging {
+            background-color: #fb7185; 
+            opacity: 0.8; cursor: grabbing; transform: scale(1.1); 
+            box-shadow: 0 3px 6px rgba(0,0,0,0.18); 
+        }
+
+        .grid-cell-overlay {
+            position: absolute;
+            z-index: 5; 
+        }
+        .grid-cell-overlay.drag-over {
+            background-color: rgba(96, 165, 250, 0.08); 
+            border: 1px dashed #60a5fa; 
+            z-index: 7; 
+            border-radius: 3px; 
+        }
+        
+        #idealPathsSvg, #actualPathSvg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none; 
+        }
+        #idealPathsSvg { z-index: 1; }
+        #actualPathSvg { z-index: 2; } 
+
+        .floor-path-line { stroke: #0ea5e9; stroke-width: 2px; fill: none; }
+        .ceil-path-line { stroke: #ec4899; stroke-width: 2px; fill: none; }
+        .actual-path-line { stroke: #8b5cf6; stroke-width: 2.5px; fill: none; }
+        .path-marker-circle { r: 3px; stroke-width: 1.5px; }
+        
+        .lct-guidance-line-base {
+            stroke: rgba(22, 163, 74, 0.6); 
+            stroke-width: 1.5px;
+            stroke-dasharray: 3 3;
+        }
+        .lct-guidance-line-expanded {
+            stroke: rgba(245, 158, 11, 0.6); 
+            stroke-width: 1.5px;
+            stroke-dasharray: 2 4;
+        }
+
+        .legend-container {
+            margin-top: 12px; /* Reduced from 15px */
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 8px 15px; /* Reduced gaps */
+            font-size: 0.75rem; /* Reduced from 0.8rem */
+            color: #374151;
+            width: 100%;
+            padding: 0 8px; 
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px; /* Reduced from 7px */
+        }
+        .legend-color-box {
+            width: 12px; /* Reduced from 14px */
+            height: 12px;
+            border-radius: 2.5px;
+        }
+        .legend-line-sample {
+            width: 18px; /* Reduced from 20px */
+            height: 2px;
+            border-radius: 1px;
+        }
+        .y-axis-title {
+            position: absolute;
+            left: -45px; /* Adjusted for smaller chart */
+            top: 50%;
+            transform: translateY(-50%) rotate(-90deg);
+            font-weight: 600;
+            color: #374151;
+            font-size: 0.8rem; /* Reduced from 0.875rem */
+            white-space: nowrap;
+        }
+        .x-axis-title {
+            position: absolute;
+            bottom: -45px; /* Adjusted for smaller chart */
+            left: 50%;
+            transform: translateX(-50%);
+            font-weight: 600;
+            color: #374151;
+            font-size: 0.8rem; /* Reduced from 0.875rem */
+        }
+        
+        /* Responsive adjustments for smaller iframe */
+        @media (max-width: 900px) {
+            .main-app-container {
+                flex-direction: column !important;
+                align-items: center;
+            }
+            .info-panel-column {
+                width: 100% !important;
+                max-width: 400px;
+                position: static !important;
+            }
+            .chart-container {
+                max-width: 100%;
+            }
+        }
+    </style>
+</head>
+<body class="bg-slate-100 flex flex-col items-center">
+    <h2 class="main-title text-slate-800">Line NAS Interactive Demo</h2>
+    
+    <div class="main-app-container flex flex-col lg:flex-row lg:items-start gap-4 w-full max-w-[1100px] mx-auto">
+        
+        <div class="flex-grow relative flex flex-col items-center justify-start min-w-0">
+            <div class="y-axis-title">Reference Chunks</div>
+            <div class="chart-container" id="chartGrid">
+                <svg id="idealPathsSvg"></svg>
+                <svg id="actualPathSvg"></svg> 
+                <div id="idealMappingContainer"></div>
+                <div id="dropTargetCellContainer"></div>
+                <div id="genChunkMarkerContainer"></div>
+                <div id="axisLabelContainerY"></div>
+                <div id="axisLabelContainerX"></div>
+            </div>
+            <div class="x-axis-title">Generated Chunks</div>
+            <div class="legend-container">
+                <div class="legend-item">
+                    <div class="legend-color-box" style="background-color: rgba(52, 211, 153, 0.2); border: 1px solid #34d399;"></div>
+                    <span>Ideal Window</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-line-sample" style="background-color: #0ea5e9;"></div>
+                    <span>Floor Ideal Path</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-line-sample" style="background-color: #ec4899;"></div>
+                    <span>Ceiling Ideal Path</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-line-sample" style="background-color: #8b5cf6;"></div>
+                    <span>Actual Alignment</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-line-sample lct-guidance-line-base" style="height: 1.5px; border-top: 1.5px dashed rgba(22, 163, 74, 0.6);"></div>
+                    <span>Base Tolerance</span>
+                </div>
+                <div class="legend-item">
+                     <div class="legend-line-sample lct-guidance-line-expanded" style="height: 1.5px; border-top: 1.5px dashed rgba(245, 158, 11, 0.6);"></div>
+                    <span>Expanded Tolerance</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="info-panel-column w-full lg:w-[300px] shrink-0 flex flex-col gap-4">
+            <div class="controls-container">
+                <div class="input-group">
+                    <label for="refLenInput" class="text-sm text-slate-600 font-medium">Ref Chunks (Y):</label>
+                    <input type="number" id="refLenInput" min="1" max="10" value="9">
+                </div>
+                <div class="input-group">
+                    <label for="genLenInput" class="text-sm text-slate-600 font-medium">Gen Chunks (X):</label>
+                    <input type="number" id="genLenInput" min="1" max="10" value="9">
+                </div>
+                <hr class="w-full my-1 border-gray-300">
+                <div class="lct-label-container">
+                    <label for="lctSlider" class="input-group lct-main-label text-sm text-slate-600 font-medium">LCT Parameter:</label>
+                    <span id="lctValueDisplay" class="lct-value-display">0</span>
+                </div>
+                <input type="range" id="lctSlider" min="0" max="5" value="0">
+                <span class="lct-range-hint">(Tolerance Multiplier: 0-5)</span>
+            </div>
+            <div class="line-lengths-container">
+                <h3>Metrics</h3>
+                <div class="info-item">
+                    <span class="text-sm">Floor Ideal Length:</span>
+                    <span id="floorLineLengthDisplay">-</span>
+                </div>
+                <div class="info-item">
+                    <span class="text-sm">Ceil Ideal Length:</span>
+                    <span id="ceilLineLengthDisplay">-</span>
+                </div>
+                <hr class="w-full my-0.5 border-gray-200">
+                <div class="info-item">
+                    <span class="font-semibold text-sm">Actual Path Length:</span>
+                    <span id="actualLineLengthDisplay" class="font-bold text-base">-</span>
+                </div>
+                <hr class="w-full my-0.5 border-gray-300">
+                <div class="info-item">
+                    <span class="font-bold text-blue-700 text-sm">Line NAS:</span>
+                    <span id="lineNasDisplay" class="font-extrabold text-lg text-blue-700">-</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Include all your original JavaScript code here
+        // (Copy the entire script section from your original Line NAS demo)
+        
+        // DOM Element References
+        const chartGrid = document.getElementById('chartGrid');
+        const idealMappingContainer = document.getElementById('idealMappingContainer');
+        const genChunkMarkerContainer = document.getElementById('genChunkMarkerContainer');
+        const dropTargetCellContainer = document.getElementById('dropTargetCellContainer');
+        const axisLabelContainerX = document.getElementById('axisLabelContainerX');
+        const axisLabelContainerY = document.getElementById('axisLabelContainerY');
+        const idealPathsSvg = document.getElementById('idealPathsSvg');
+        const actualPathSvg = document.getElementById('actualPathSvg');
+
+        const refLenInput = document.getElementById('refLenInput');
+        const genLenInput = document.getElementById('genLenInput');
+        const lctSlider = document.getElementById('lctSlider');
+        const lctValueDisplay = document.getElementById('lctValueDisplay');
+
+        const floorLineLengthDisplay = document.getElementById('floorLineLengthDisplay');
+        const ceilLineLengthDisplay = document.getElementById('ceilLineLengthDisplay');
+        const actualLineLengthDisplay = document.getElementById('actualLineLengthDisplay');
+        const lineNasDisplay = document.getElementById('lineNasDisplay'); 
+
+        // State Variables
+        let numUnitsY = parseInt(refLenInput.value, 10);
+        let numUnitsX = parseInt(genLenInput.value, 10);
+        let currentLct = parseInt(lctSlider.value, 10);
+
+        let markers_config = [];
+        let currentPrecisionWindows = [];
+        let currentFloorPath = [];
+        let currentCeilPath = [];
+        let currentFloorLength = 0;
+        let currentCeilLength = 0;
+        let currentActualLength = 0;
+        let currentLineNas = 0; 
+        let floorPathDyMap = {};
+        let currentActualPathSegments = [];
+        let currentLctWindowBase = 0; 
+        let currentExpandedLctWindow = 0; 
+
+
+        /**
+         * Calculates ideal mapping windows. (Original)
+         */
+        function get_mapping_windows_js(refLen, genLen) {
+            const isRefLonger = refLen >= genLen;
+            const longerLen = isRefLonger ? refLen : genLen;
+            const shorterLen = isRefLonger ? genLen : refLen;
+
+            if (shorterLen === 0) return { precision_windows: [] };
+
+            const slope = longerLen / shorterLen;
+            const mappingWindowHeight = Math.ceil(slope);
+
+            let direct_windows = [];
+            for (let i = 0; i < shorterLen; i++) {
+                const idx_point = i * slope;
+                const start = Math.max(Math.floor(idx_point), 0);
+                const end = Math.min(start + mappingWindowHeight, longerLen);
+                direct_windows.push({ start: start, end: end });
+            }
+            
+            let precision_windows_for_gen_chunks;
+
+            if (isRefLonger) {
+                precision_windows_for_gen_chunks = direct_windows;
+            } else {
+                precision_windows_for_gen_chunks = [];
+                for (let genIdx = 0; genIdx < genLen; genIdx++) {
+                    let mappedRefIndices = [];
+                    direct_windows.forEach((ref_window_on_gen_axis, refIdx) => {
+                        if (genIdx >= ref_window_on_gen_axis.start && genIdx < ref_window_on_gen_axis.end) {
+                            mappedRefIndices.push(refIdx);
+                        }
+                    });
+
+                    if (mappedRefIndices.length > 0) {
+                        precision_windows_for_gen_chunks.push({ start: Math.min(...mappedRefIndices), end: Math.max(...mappedRefIndices) + 1 });
+                    } else {
+                        const proportionalRefPos = Math.floor((genIdx / genLen) * refLen);
+                        precision_windows_for_gen_chunks.push({ start: proportionalRefPos, end: Math.min(proportionalRefPos + 1, refLen)});
+                    }
+                }
+            }
+            return { precision_windows: precision_windows_for_gen_chunks.map(w => ({start: w.start, end: Math.max(w.start +1, w.end)})) };
+        }
+
+
+        /**
+         * Computes ideal narrative line band. (Original)
+         */
+        function computeIdealNarrativeLineBandJS(mappingWindows, numGenChunks, numRefChunks) {
+            const n_windows = mappingWindows.length;
+            if (n_windows <= 1) {
+                return { shortest_line: 0.0, longest_line: 0.0, floor_path: [], ceil_path: [] };
+            }
+
+            let dp_min_list = [];
+            let dp_max_list = [];
+            let pred_min_list = [];
+            let pred_max_list = [];
+
+            for (let i = 0; i < n_windows; i++) {
+                const { start, end } = mappingWindows[i];
+                const window_height = Math.max(1, end - start);
+
+                dp_min_list.push(Array(window_height).fill(Infinity));
+                dp_max_list.push(Array(window_height).fill(-Infinity));
+                pred_min_list.push(Array(window_height).fill(-1));
+                pred_max_list.push(Array(window_height).fill(-1));
+            }
+            
+            if (mappingWindows[0]){ // Ensure mappingWindows[0] exists
+                const { start: start0, end: end0 } = mappingWindows[0];
+                const window0_height = Math.max(1, end0 - start0);
+                for (let y_offset = 0; y_offset < window0_height; y_offset++) {
+                    if (dp_min_list[0] && dp_min_list[0][y_offset] !== undefined) { 
+                        dp_min_list[0][y_offset] = 0;
+                        dp_max_list[0][y_offset] = 0;
+                    }
+                }
+            }
+
+
+            for (let i = 1; i < n_windows; i++) {
+                 if (!mappingWindows[i-1] || !mappingWindows[i]) continue; // Check if windows exist
+
+                const { start: curr_start, end: curr_end } = mappingWindows[i];
+                const curr_window_height = Math.max(1, curr_end - curr_start);
+
+                const { start: prev_start, end: prev_end } = mappingWindows[i-1];
+                const prev_window_height = Math.max(1, prev_end - prev_start);
+
+                for (let y_curr_offset = 0; y_curr_offset < curr_window_height; y_curr_offset++) {
+                    const curr_y_abs = curr_start + y_curr_offset;
+
+                    for (let y_prev_offset = 0; y_prev_offset < prev_window_height; y_prev_offset++) {
+                        const prev_y_abs = prev_start + y_prev_offset;
+                        
+                        const dx_val = 1;
+                        const dy_val = curr_y_abs - prev_y_abs;
+                        const distance = Math.sqrt(dx_val*dx_val + dy_val*dy_val);
+
+                        if (dp_min_list[i-1] && dp_min_list[i-1][y_prev_offset] !== undefined && dp_min_list[i] && dp_min_list[i][y_curr_offset] !== undefined) {
+                            if (dp_min_list[i-1][y_prev_offset] + distance < dp_min_list[i][y_curr_offset]) {
+                                dp_min_list[i][y_curr_offset] = dp_min_list[i-1][y_prev_offset] + distance;
+                                pred_min_list[i][y_curr_offset] = y_prev_offset;
+                            }
+                        }
+                        if (dp_max_list[i-1] && dp_max_list[i-1][y_prev_offset] !== undefined && dp_max_list[i] && dp_max_list[i][y_curr_offset] !== undefined) {
+                            if (dp_max_list[i-1][y_prev_offset] !== -Infinity && 
+                                dp_max_list[i-1][y_prev_offset] + distance > dp_max_list[i][y_curr_offset]) {
+                                dp_max_list[i][y_curr_offset] = dp_max_list[i-1][y_prev_offset] + distance;
+                                pred_max_list[i][y_curr_offset] = y_prev_offset;
+                            }
+                        }
+                    }
+                }
+            }
+
+            let shortest_line = 0; // Default to 0
+            let longest_line = 0;  // Default to 0
+            let shortest_end_y_offset = 0;
+            let longest_end_y_offset = 0;
+
+            if (n_windows > 0 && mappingWindows[n_windows -1]) { // Check if last window exists
+                const last_window_idx = n_windows - 1;
+                const { start: last_start, end: last_end } = mappingWindows[last_window_idx];
+                const last_window_height = Math.max(1, last_end - last_start);
+                
+                shortest_line = Infinity;
+                if (dp_min_list[last_window_idx] && dp_min_list[last_window_idx].length > 0) {
+                    for (let y_offset = 0; y_offset < last_window_height; y_offset++) {
+                        if (dp_min_list[last_window_idx][y_offset] < shortest_line) {
+                            shortest_line = dp_min_list[last_window_idx][y_offset];
+                            shortest_end_y_offset = y_offset;
+                        }
+                    }
+                }
+                if (shortest_line === Infinity) shortest_line = 0;
+
+
+                longest_line = -Infinity;
+                if (dp_max_list[last_window_idx] && dp_max_list[last_window_idx].length > 0) {
+                    for (let y_offset = 0; y_offset < last_window_height; y_offset++) {
+                        if (dp_max_list[last_window_idx][y_offset] > longest_line) {
+                            longest_line = dp_max_list[last_window_idx][y_offset];
+                            longest_end_y_offset = y_offset;
+                        }
+                    }
+                }
+                 if (longest_line === -Infinity) longest_line = shortest_line; // If longest couldn't be found, use shortest
+            }
+
+
+            let floor_path = [];
+            if (n_windows > 0) {
+                let current_y_offset_min = shortest_end_y_offset;
+                for (let i = n_windows - 1; i >= 0; i--) {
+                    if (!mappingWindows[i] || !pred_min_list[i] || (pred_min_list[i][current_y_offset_min] === undefined && i > 0)) break;
+                    const y_abs = mappingWindows[i].start + current_y_offset_min;
+                    floor_path.unshift({ x: i, y: y_abs });
+                    if (i > 0) {
+                        if (pred_min_list[i][current_y_offset_min] === -1 || pred_min_list[i][current_y_offset_min] === undefined) {
+                             break;
+                        }
+                        current_y_offset_min = pred_min_list[i][current_y_offset_min];
+                    }
+                }
+            }
+            
+            let ceil_path = [];
+            if (n_windows > 0) {
+                let current_y_offset_max = longest_end_y_offset;
+                for (let i = n_windows - 1; i >= 0; i--) {
+                     if (!mappingWindows[i] || !pred_max_list[i] || (pred_max_list[i][current_y_offset_max] === undefined && i > 0)) break;
+                    const y_abs = mappingWindows[i].start + current_y_offset_max;
+                    ceil_path.unshift({ x: i, y: y_abs });
+                    if (i > 0) {
+                         if (pred_max_list[i][current_y_offset_max] === -1 || pred_max_list[i][current_y_offset_max] === undefined) {
+                            break;
+                        }
+                        current_y_offset_max = pred_max_list[i][current_y_offset_max];
+                    }
+                }
+            }
+            return { shortest_line, longest_line, floor_path, ceil_path };
+        }
+
+        /**
+         * Generates floor path dy map. (Original)
+         */
+        function generateFloorPathDyMap(floorPath) {
+            const dyMap = {};
+            if (!floorPath || floorPath.length < 2) return dyMap;
+            for (let i = 0; i < floorPath.length - 1; i++) {
+                const p1 = floorPath[i];
+                const p2 = floorPath[i+1];
+                if (p2.x - p1.x === 1) {
+                    dyMap[p1.x] = p2.y - p1.y;
+                }
+            }
+            return dyMap;
+        }
+        
+        /**
+         * Computes actual line length. (Original)
+         */
+        function computeActualLineLengthJS(actualPathPoints, totalRefChunks, totalGenChunks, lctValue, localFloorPathDyMap) {
+            if (!actualPathPoints || actualPathPoints.length <= 1) {
+                return { totalLength: 0.0, segments: [], lct_window_base: 0, expanded_lct_window: 0 };
+            }
+
+            const sortedPath = [...actualPathPoints].sort((a,b) => a.x - b.x);
+            let currentTotalLength = 0;
+            let pathSegments = [];
+
+            const mappingWindowHeight = totalGenChunks > 0 ? Math.ceil(totalRefChunks / totalGenChunks) : 0;
+            const ratio = totalGenChunks > 0 ? totalRefChunks / totalGenChunks : 0;
+            const ratioDecimalPart = ratio - Math.floor(ratio);
+
+            let lct_window_base;
+            if (totalRefChunks <= totalGenChunks) {
+                lct_window_base = mappingWindowHeight;
+            } else {
+                if (ratioDecimalPart > 0 && ratioDecimalPart <= 0.5) {
+                    lct_window_base = (2 * mappingWindowHeight) - 2;
+                } else {
+                    lct_window_base = (2 * mappingWindowHeight) - 1;
+                }
+            }
+            lct_window_base = Math.max(0, lct_window_base);
+
+            const expanded_lct_window = lct_window_base * (1 + lctValue);
+
+            for (let i = 0; i < sortedPath.length - 1; i++) {
+                const p1 = sortedPath[i];
+                const p2 = sortedPath[i+1];
+
+                const dx_segment = p2.x - p1.x;
+                const dy_segment_raw = p2.y - p1.y;
+
+                if (dx_segment <= 0) continue;
+
+                const dy_for_eval = (lctValue > 0) ? Math.abs(dy_segment_raw) : dy_segment_raw;
+                
+                let segmentLength = 0;
+                let calculation_method = "none";
+                let is_calculable = false;
+
+
+                if (dy_for_eval <= lct_window_base && (lctValue === 0 ? dy_for_eval >= 0 : true)) {
+                    segmentLength = Math.sqrt(dx_segment**2 + dy_segment_raw**2);
+                    is_calculable = true;
+                    calculation_method = "standard";
+                }
+                else if (lctValue > 0 && dy_for_eval > lct_window_base && dy_for_eval <= expanded_lct_window) {
+                    let floor_dy_val = dy_segment_raw; 
+                    if (localFloorPathDyMap && localFloorPathDyMap.hasOwnProperty(p1.x)) {
+                         floor_dy_val = localFloorPathDyMap[p1.x];
+                    }
+                    segmentLength = Math.sqrt(dx_segment**2 + floor_dy_val**2);
+                    is_calculable = true;
+                    calculation_method = "lct_capped";
+                }
+                currentTotalLength += segmentLength;
+                pathSegments.push({
+                    start: {x: p1.x, y: p1.y},
+                    end: {x: p2.x, y: p2.y},
+                    dx: dx_segment,
+                    dy: dy_segment_raw,
+                    threshold: lct_window_base,
+                    threshold_with_lct: expanded_lct_window,
+                    is_calculable: is_calculable,
+                    calculation_method: calculation_method,
+                    length: segmentLength
+                });
+            }
+            return { totalLength: currentTotalLength, segments: pathSegments, lct_window_base: lct_window_base, expanded_lct_window: expanded_lct_window };
+        }
+
+        /**
+         * Calculates the Line NAS score.
+         */
+        function calculateLineNAS(floorLength, ceilLength, actualLength) {
+            const fl = Math.max(0, floorLength);
+            const cl = Math.max(0, ceilLength);
+            const al = Math.max(0, actualLength);
+
+            if (fl === 0 && cl === 0 && al === 0) return 1.0; // All zero, perfect alignment in a trivial case
+            if (fl === 0 && al === 0) return 1.0; // If floor is 0 and actual is 0, it's a perfect match for floor.
+
+            if (fl <= al && al <= cl) {
+                return 1.0;
+            } else if (al < fl) {
+                return fl > 0 ? al / fl : 0.0; // Avoid division by zero
+            } else { // al > cl
+                return al > 0 ? cl / al : 0.0; // Avoid division by zero
+            }
+        }
+
+
+        /**
+         * Updates the grid background pattern.
+         */
+        function updateGridBackground() {
+            requestAnimationFrame(() => {
+                if (numUnitsX > 0 && numUnitsY > 0) {
+                    chartGrid.style.backgroundImage = `
+                        linear-gradient(to right, #e2e8f0 1px, transparent 1px),
+                        linear-gradient(to bottom, #e2e8f0 1px, transparent 1px)
+                    `;
+                    chartGrid.style.backgroundSize = `calc(100% / ${numUnitsX}) calc(100% / ${numUnitsY})`;
+                } else {
+                    chartGrid.style.backgroundImage = 'none';
+                }
+            });
+        }
+
+        /**
+         * Renders the ideal mapping windows.
+         */
+        function renderIdealMappingWindows() {
+            idealMappingContainer.innerHTML = '';
+            if (!currentPrecisionWindows || numUnitsX === 0 || numUnitsY === 0) return;
+            currentPrecisionWindows.forEach((windowData, gen_chunk_idx) => {
+                if (gen_chunk_idx >= numUnitsX || !windowData) return; // Add check for windowData
+                const idealWindowDiv = document.createElement('div');
+                idealWindowDiv.classList.add('ideal-mapping-window');
+                idealWindowDiv.style.left = `calc(${gen_chunk_idx} * 100% / ${numUnitsX})`;
+                idealWindowDiv.style.width = `calc(100% / ${numUnitsX})`;
+                
+                const startY = Math.max(0, windowData.start);
+                const endY = Math.min(numUnitsY, windowData.end);
+                const height = Math.max(0, endY - startY);
+
+                idealWindowDiv.style.bottom = `calc(${startY} * 100% / ${numUnitsY})`;
+                idealWindowDiv.style.height = `calc(${height} * 100% / ${numUnitsY})`;
+                idealMappingContainer.appendChild(idealWindowDiv);
+            });
+        }
+        
+        /**
+         * Helper function to draw a path on an SVG canvas.
+         */
+        function drawPathAndMarkersOnSvg(svgElement, pathData, lineClass, markerFillColor, markerStrokeColor) {
+            const chartWidthPx = chartGrid.clientWidth;
+            const chartHeightPx = chartGrid.clientHeight;
+            if (numUnitsX === 0 || numUnitsY === 0 || chartWidthPx === 0 || chartHeightPx === 0 || !pathData || pathData.length === 0) {
+                return;
+            }
+
+            const cellWidthPx = chartWidthPx / numUnitsX;
+            const cellHeightPx = chartHeightPx / numUnitsY;
+
+            if (pathData.length >= 2) {
+                const points = pathData.map(p => {
+                    const svgX = (p.x + 0.5) * cellWidthPx;
+                    const svgY = chartHeightPx - ((p.y + 0.5) * cellHeightPx);
+                    return `${svgX},${svgY}`;
+                }).join(' ');
+
+                const polyline = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
+                polyline.setAttribute('points', points);
+                polyline.setAttribute('class', lineClass);
+                svgElement.appendChild(polyline);
+            }
+            
+            pathData.forEach(p => {
+                const svgX = (p.x + 0.5) * cellWidthPx;
+                const svgY = chartHeightPx - ((p.y + 0.5) * cellHeightPx);
+
+                const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                circle.setAttribute('cx', svgX);
+                circle.setAttribute('cy', svgY);
+                circle.setAttribute('class', 'path-marker-circle');
+                circle.style.fill = markerFillColor;
+                circle.style.stroke = markerStrokeColor;
+                svgElement.appendChild(circle);
+            });
+        }
+
+
+        /**
+         * Renders the floor and ceil paths.
+         */
+        function renderIdealPaths() {
+            idealPathsSvg.innerHTML = '';
+            drawPathAndMarkersOnSvg(idealPathsSvg, currentFloorPath, 'floor-path-line', '#93c5fd', '#0ea5e9');
+            drawPathAndMarkersOnSvg(idealPathsSvg, currentCeilPath, 'ceil-path-line', '#f9a8d4', '#ec4899');
+        }
+
+        /**
+         * Draws LCT guidance lines.
+         */
+        function drawLctGuidanceForActualPath(svgElement, actualPathPoints, lctBase, lctExpanded, currentLctVal) {
+            if (!actualPathPoints || actualPathPoints.length === 0 || numUnitsX <= 0 || numUnitsY <= 0) return;
+
+            const chartWidthPx = chartGrid.clientWidth;
+            const chartHeightPx = chartGrid.clientHeight;
+            if (chartWidthPx === 0 || chartHeightPx === 0) return;
+
+            const cellWidthPx = chartWidthPx / numUnitsX;
+            const cellHeightPx = chartHeightPx / numUnitsY;
+
+            const toSvgCoords = (gx, gy) => {
+                const clampedGy = Math.max(-0.5, Math.min(numUnitsY - 0.5, gy));
+                const svgX = (gx + 0.5) * cellWidthPx;
+                const svgY = chartHeightPx - ((clampedGy + 0.5) * cellHeightPx);
+                return { x: svgX, y: svgY };
+            };
+
+            actualPathPoints.forEach((point) => {
+                if (point.x >= numUnitsX - 1) return; 
+
+                const startCoords = toSvgCoords(point.x, point.y);
+                const nextXGrid = point.x + 1;
+
+                const targetYBaseUpperGrid = point.y + lctBase;
+                const endCoordsBaseUpper = toSvgCoords(nextXGrid, targetYBaseUpperGrid);
+
+                const lineBaseUpper = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                lineBaseUpper.setAttribute('x1', startCoords.x);
+                lineBaseUpper.setAttribute('y1', startCoords.y);
+                lineBaseUpper.setAttribute('x2', endCoordsBaseUpper.x);
+                lineBaseUpper.setAttribute('y2', endCoordsBaseUpper.y);
+                lineBaseUpper.setAttribute('class', 'lct-guidance-line-base');
+                svgElement.appendChild(lineBaseUpper);
+
+                let targetYBaseLowerGridReal;
+                if (currentLctVal > 0) {
+                    targetYBaseLowerGridReal = point.y - lctBase;
+                } else {
+                    targetYBaseLowerGridReal = point.y; 
+                }
+                const endCoordsBaseLower = toSvgCoords(nextXGrid, targetYBaseLowerGridReal);
+                const lineBaseLower = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                lineBaseLower.setAttribute('x1', startCoords.x);
+                lineBaseLower.setAttribute('y1', startCoords.y);
+                lineBaseLower.setAttribute('x2', endCoordsBaseLower.x);
+                lineBaseLower.setAttribute('y2', endCoordsBaseLower.y);
+                lineBaseLower.setAttribute('class', 'lct-guidance-line-base');
+                svgElement.appendChild(lineBaseLower);
+
+                if (currentLctVal > 0 && lctExpanded > lctBase) {
+                    const targetYExpandedUpperGrid = point.y + lctExpanded;
+                    const endCoordsExpandedUpper = toSvgCoords(nextXGrid, targetYExpandedUpperGrid);
+                    const lineExpandedUpper = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                    lineExpandedUpper.setAttribute('x1', startCoords.x);
+                    lineExpandedUpper.setAttribute('y1', startCoords.y);
+                    lineExpandedUpper.setAttribute('x2', endCoordsExpandedUpper.x);
+                    lineExpandedUpper.setAttribute('y2', endCoordsExpandedUpper.y);
+                    lineExpandedUpper.setAttribute('class', 'lct-guidance-line-expanded');
+                    svgElement.appendChild(lineExpandedUpper);
+
+                    const targetYExpandedLowerGrid = point.y - lctExpanded;
+                    const endCoordsExpandedLower = toSvgCoords(nextXGrid, targetYExpandedLowerGrid);
+                    const lineExpandedLower = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                    lineExpandedLower.setAttribute('x1', startCoords.x);
+                    lineExpandedLower.setAttribute('y1', startCoords.y);
+                    lineExpandedLower.setAttribute('x2', endCoordsExpandedLower.x);
+                    lineExpandedLower.setAttribute('y2', endCoordsExpandedLower.y);
+                    lineExpandedLower.setAttribute('class', 'lct-guidance-line-expanded');
+                    svgElement.appendChild(lineExpandedLower);
+                }
+            });
+        }
+
+
+        /**
+         * Renders actual path, its length, LCT guidance, and updates Line NAS.
+         */
+        function renderActualPath() {
+            actualPathSvg.innerHTML = ''; 
+            if (markers_config.length === 0) {
+                 actualLineLengthDisplay.textContent = (0).toFixed(2);
+                 currentActualPathSegments = [];
+                 currentLctWindowBase = 0;
+                 currentExpandedLctWindow = 0;
+                 currentActualLength = 0; // Ensure actual length is 0 for NAS calc
+                 currentLineNas = calculateLineNAS(currentFloorLength, currentCeilLength, currentActualLength); 
+                 lineNasDisplay.textContent = currentLineNas.toFixed(3);
+                 return;
+            }
+
+            const sortedMarkers = [...markers_config].sort((a, b) => a.currentX - b.currentX);
+            const pathData = sortedMarkers.map(marker => ({ x: marker.currentX, y: marker.currentY }));
+            
+            drawPathAndMarkersOnSvg(actualPathSvg, pathData, 'actual-path-line', '#c4b5fd', '#8b5cf6');
+            
+            const lengthAndSegmentData = computeActualLineLengthJS(pathData, numUnitsY, numUnitsX, currentLct, floorPathDyMap);
+            currentActualLength = lengthAndSegmentData.totalLength;
+            currentActualPathSegments = lengthAndSegmentData.segments;
+            currentLctWindowBase = lengthAndSegmentData.lct_window_base; 
+            currentExpandedLctWindow = lengthAndSegmentData.expanded_lct_window; 
+            actualLineLengthDisplay.textContent = currentActualLength.toFixed(2);
+
+            drawLctGuidanceForActualPath(actualPathSvg, pathData, currentLctWindowBase, currentExpandedLctWindow, currentLct);
+            
+            currentLineNas = calculateLineNAS(currentFloorLength, currentCeilLength, currentActualLength);
+            lineNasDisplay.textContent = currentLineNas.toFixed(3);
+        }
+        
+        /**
+         * Renders draggable markers.
+         */
+        function renderGenChunkMarkers() {
+            renderActualPath(); 
+
+            genChunkMarkerContainer.innerHTML = '';
+            if (numUnitsX === 0 || numUnitsY === 0) return;
+
+            markers_config.forEach(markerData => {
+                const markerDiv = document.createElement('div');
+                markerDiv.classList.add('gen-chunk-marker');
+                markerDiv.setAttribute('draggable', 'true');
+                markerDiv.dataset.id = markerData.id;
+
+                const markerWidth = `calc(max(0px, 100% / ${numUnitsX} - 3px))`;
+                const markerHeight = `calc(max(0px, 100% / ${numUnitsY} - 3px))`;
+
+                markerDiv.style.width = markerWidth;
+                markerDiv.style.height = markerHeight;
+                markerDiv.style.left = `calc(${markerData.currentX} * 100% / ${numUnitsX} + 1.5px)`;
+                markerDiv.style.bottom = `calc(${markerData.currentY} * 100% / ${numUnitsY} + 1.5px)`;
+                
+                let markerContent = `<div class="marker-id">ID: ${markerData.id}</div>`;
+                const segment = currentActualPathSegments.find(s => s.start.x === markerData.currentX && s.start.y === markerData.currentY);
+                if (segment) {
+                    markerContent += `<div class="marker-dy">dy: ${segment.dy >= 0 ? '+' : ''}${segment.dy}</div>`;
+                }
+
+                markerDiv.innerHTML = markerContent;
+                
+                markerDiv.addEventListener('dragstart', handleDragStart);
+                genChunkMarkerContainer.appendChild(markerDiv);
+            });
+        }
+
+        /**
+         * Renders drop target cells.
+         */
+        function renderDropTargetCells() {
+            dropTargetCellContainer.innerHTML = '';
+            if (numUnitsX === 0 || numUnitsY === 0) return;
+
+            for (let y_idx = 0; y_idx < numUnitsY; y_idx++) {
+                for (let x_idx = 0; x_idx < numUnitsX; x_idx++) {
+                    const cell = document.createElement('div');
+                    cell.classList.add('grid-cell-overlay');
+                    cell.dataset.x = x_idx;
+                    cell.dataset.y = y_idx;
+                    
+                    cell.style.width = `calc(100% / ${numUnitsX})`;
+                    cell.style.height = `calc(100% / ${numUnitsY})`;
+                    cell.style.left = `calc(${x_idx} * 100% / ${numUnitsX})`;
+                    cell.style.bottom = `calc(${y_idx} * 100% / ${numUnitsY})`;
+                    
+                    cell.addEventListener('dragover', handleDragOver);
+                    cell.addEventListener('dragleave', handleDragLeave);
+                    cell.addEventListener('drop', handleDrop);
+                    dropTargetCellContainer.appendChild(cell);
+                }
+            }
+        }
+        
+        /**
+         * Renders axis labels.
+         */
+        function renderAxisLabels() {
+            axisLabelContainerX.innerHTML = '';
+            axisLabelContainerY.innerHTML = '';
+            if (numUnitsX === 0 || numUnitsY === 0) return;
+            
+            const maxGridIndexX = numUnitsX - 1;
+            const maxGridIndexY = numUnitsY - 1;
+            
+            const yStep = Math.max(1, Math.ceil(numUnitsY / 10));
+            const xStep = Math.max(1, Math.ceil(numUnitsX / 10));
+
+            for (let i = 0; i <= maxGridIndexY; i += yStep ) {
+                const tickLabelY = document.createElement('div');
+                tickLabelY.classList.add('axis-label');
+                tickLabelY.textContent = i;
+                tickLabelY.style.left = '-28px'; 
+                tickLabelY.style.bottom = `calc((${i} + 0.5) * 100% / ${numUnitsY})`;
+                tickLabelY.style.transform = 'translateY(50%)';
+                axisLabelContainerY.appendChild(tickLabelY);
+            }
+             if (maxGridIndexY > 0 && (maxGridIndexY % yStep !== 0 || numUnitsY <=10)) {
+                if (!axisLabelContainerY.querySelector(`.axis-label[data-value='${maxGridIndexY}']`)) {
+                    const existingLabelsY = Array.from(axisLabelContainerY.children).map(el => parseInt(el.textContent));
+                    if (!existingLabelsY.includes(maxGridIndexY)) {
+                        const tickLabelYLast = document.createElement('div');
+                        tickLabelYLast.classList.add('axis-label');
+                        tickLabelYLast.dataset.value = maxGridIndexY;
+                        tickLabelYLast.textContent = maxGridIndexY;
+                        tickLabelYLast.style.left = '-28px';
+                        tickLabelYLast.style.bottom = `calc((${maxGridIndexY} + 0.5) * 100% / ${numUnitsY})`;
+                        tickLabelYLast.style.transform = 'translateY(50%)';
+                        axisLabelContainerY.appendChild(tickLabelYLast);
+                    }
+                }
+            }
+
+            for (let i = 0; i <= maxGridIndexX; i += xStep ) {
+                const tickLabelX = document.createElement('div');
+                tickLabelX.classList.add('axis-label');
+                tickLabelX.textContent = i;
+                tickLabelX.style.bottom = '-25px'; 
+                tickLabelX.style.left = `calc((${i} + 0.5) * 100% / ${numUnitsX})`;
+                tickLabelX.style.transform = 'translateX(-50%)';
+                axisLabelContainerX.appendChild(tickLabelX);
+            }
+             if (maxGridIndexX > 0 && (maxGridIndexX % xStep !== 0 || numUnitsX <= 10)) {
+                 if (!axisLabelContainerX.querySelector(`.axis-label[data-value='${maxGridIndexX}']`)) {
+                    const existingLabelsX = Array.from(axisLabelContainerX.children).map(el => parseInt(el.textContent));
+                    if (!existingLabelsX.includes(maxGridIndexX)) {
+                        const tickLabelXLast = document.createElement('div');
+                        tickLabelXLast.classList.add('axis-label');
+                        tickLabelXLast.dataset.value = maxGridIndexX;
+                        tickLabelXLast.textContent = maxGridIndexX;
+                        tickLabelXLast.style.bottom = '-25px';
+                        tickLabelXLast.style.left = `calc((${maxGridIndexX} + 0.5) * 100% / ${numUnitsX})`;
+                        tickLabelXLast.style.transform = 'translateX(-50%)';
+                        axisLabelContainerX.appendChild(tickLabelXLast);
+                    }
+                }
+            }
+        }
+
+        // Drag and Drop Event Handlers
+        let draggedMarkerId = null;
+        function handleDragStart(e) {
+            const markerElement = e.target.closest('.gen-chunk-marker');
+            if (!markerElement) return;
+
+            draggedMarkerId = parseInt(markerElement.dataset.id, 10);
+            markerElement.classList.add('dragging');
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/plain', draggedMarkerId);
+        }
+        function handleDragOver(e) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            if (e.currentTarget.classList.contains('grid-cell-overlay')) {
+                e.currentTarget.classList.add('drag-over');
+            }
+        }
+        function handleDragLeave(e) {
+            if (e.currentTarget.classList.contains('grid-cell-overlay')) {
+                e.currentTarget.classList.remove('drag-over');
+            }
+        }
+        function handleDrop(e) {
+            e.preventDefault();
+            if (!e.currentTarget.classList.contains('grid-cell-overlay')) return;
+            e.currentTarget.classList.remove('drag-over');
+
+            const targetX = parseInt(e.currentTarget.dataset.x, 10);
+            const targetY = parseInt(e.currentTarget.dataset.y, 10);
+            
+            const draggedMarkerData = markers_config.find(m => m.id === draggedMarkerId);
+            if (!draggedMarkerData) return;
+
+            const oldX = draggedMarkerData.currentX;
+            const markerAtTargetXColumn = markers_config.find(m => m.currentX === targetX && m.id !== draggedMarkerId);
+            if (markerAtTargetXColumn && targetX !== oldX) {
+                markerAtTargetXColumn.currentX = oldX;
+            }
+
+            draggedMarkerData.currentX = targetX;
+            draggedMarkerData.currentY = targetY;
+            
+            const markerElementDOM = genChunkMarkerContainer.querySelector(`.gen-chunk-marker[data-id='${draggedMarkerId}']`);
+            if(markerElementDOM) markerElementDOM.classList.remove('dragging');
+            
+            draggedMarkerId = null; 
+            renderGenChunkMarkers(); 
+        }
+        
+        /**
+         * Main function to initialize/update state and re-render everything.
+         */
+        function initializeStateAndRender() {
+            numUnitsY = parseInt(refLenInput.value, 10) || 1;
+            numUnitsX = parseInt(genLenInput.value, 10) || 1;
+            currentLct = parseInt(lctSlider.value, 10);
+            lctValueDisplay.textContent = currentLct;
+
+            refLenInput.value = Math.max(1, Math.min(20, numUnitsY));
+            genLenInput.value = Math.max(1, Math.min(20, numUnitsX));
+            numUnitsY = parseInt(refLenInput.value, 10); 
+            numUnitsX = parseInt(genLenInput.value, 10); 
+
+
+            const windowsData = get_mapping_windows_js(numUnitsY, numUnitsX);
+            currentPrecisionWindows = windowsData.precision_windows;
+
+            if (currentPrecisionWindows && currentPrecisionWindows.length > 0 && numUnitsX > 0 && numUnitsY > 0) {
+                const { shortest_line, longest_line, floor_path, ceil_path } = computeIdealNarrativeLineBandJS(currentPrecisionWindows, numUnitsX, numUnitsY);
+                currentFloorPath = floor_path;
+                currentCeilPath = ceil_path;
+                currentFloorLength = shortest_line;
+                currentCeilLength = longest_line;
+                floorLineLengthDisplay.textContent = shortest_line.toFixed(2);
+                ceilLineLengthDisplay.textContent = longest_line.toFixed(2);
+                floorPathDyMap = generateFloorPathDyMap(currentFloorPath);
+            } else {
+                currentFloorPath = []; currentCeilPath = [];
+                currentFloorLength = 0; currentCeilLength = 0;
+                floorLineLengthDisplay.textContent = (0).toFixed(2);
+                ceilLineLengthDisplay.textContent = (0).toFixed(2);
+                floorPathDyMap = {};
+                currentLineNas = calculateLineNAS(0, 0, currentActualLength); // currentActualLength might be from previous state
+                lineNasDisplay.textContent = currentLineNas.toFixed(3);
+            }
+
+            const reinitializeMarkers = markers_config.length !== numUnitsX || !markers_config.every((m,i)=> m.id === i && m.currentX === i);
+
+            if (reinitializeMarkers) {
+                markers_config = [];
+                for(let i = 0; i < numUnitsX; i++) {
+                    let idealYStart = Math.floor((numUnitsY -1) / 2); 
+                    if (currentPrecisionWindows && currentPrecisionWindows[i] && currentPrecisionWindows[i].start !== undefined) {
+                        const windowStart = currentPrecisionWindows[i].start;
+                        idealYStart = windowStart; 
+                    }
+                    markers_config.push({
+                        id: i,
+                        currentX: i,
+                        currentY: Math.min(Math.max(0, idealYStart), numUnitsY - 1)
+                    });
+                }
+            } else {
+                markers_config.forEach(marker => {
+                    marker.currentY = Math.min(Math.max(0, marker.currentY), numUnitsY - 1);
+                    marker.currentX = Math.min(Math.max(0, marker.currentX), numUnitsX - 1);
+                });
+                if (markers_config.length > numUnitsX) {
+                    markers_config = markers_config.slice(0, numUnitsX);
+                }
+                markers_config.sort((a,b) => a.currentX - b.currentX);
+            }
+            
+            updateGridBackground();
+            renderIdealMappingWindows();
+            renderIdealPaths();
+            renderDropTargetCells();
+            renderAxisLabels();
+            renderGenChunkMarkers(); 
+        }
+        
+        // Event Listeners
+        refLenInput.addEventListener('change', initializeStateAndRender);
+        genLenInput.addEventListener('change', initializeStateAndRender);
+        lctSlider.addEventListener('input', () => {
+            currentLct = parseInt(lctSlider.value, 10);
+            lctValueDisplay.textContent = currentLct;
+            renderGenChunkMarkers(); 
+        });
+
+        let resizeTimer;
+        window.addEventListener('resize', () => {
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(() => {
+                initializeStateAndRender();
+            }, 150); 
+        });
+
+        window.addEventListener('load', initializeStateAndRender);
+
+    </script>
+</body>
+</html>
