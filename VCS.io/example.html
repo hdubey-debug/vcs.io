@@ -5,7 +5,7 @@
                 <h2 class="text-center">How VCS Works: A Step-by-Step Example</h2>
                 <p class="mb-10 text-center text-slate-600">Follow the flow to see how VCS processes input texts to generate a comprehension score.</p>
 
-                <div class="space-y-6"> 
+                <div class="space-y-6">
                     <div class="text-center">
                         <h3 class="flowchart-step-title"><i class="fas fa-file-alt mr-2"></i>1. Input Texts: Reference & Generated</h3>
                     </div>
@@ -30,12 +30,12 @@ The old town bell rings, signaling the start of a busy market. Stalls come alive
                         </div>
                         <div class="connector-line h-0.5 w-1/2 md:w-1/4 my-[-1px] relative z-0"></div> <div class="connector-line w-0.5 h-6 relative z-0"></div> <div class="connector-arrow connector-arrow-styled"><i class="fas fa-arrow-down"></i></div>
                     </div>
-                    
+
                     <div class="text-center">
                         <h3 class="flowchart-step-title"><i class="fas fa-cogs mr-2"></i>2. Processing via VCS API</h3>
                     </div>
                     <div class="flex justify-center">
-                        <div class="flowchart-block flowchart-block-api"> 
+                        <div class="flowchart-block flowchart-block-api">
                             <h4 class="flowchart-title">compute_vcs_score API Call</h4>
                             <div class="api-signature-block">
                                 <code>compute_vcs_score(</code><br>
@@ -59,7 +59,7 @@ The old town bell rings, signaling the start of a busy market. Stalls come alive
                     <div class="connector-wrapper flex flex-col items-center">
                         <div class="connector-line w-0.5 h-6"></div>
                         <div class="connector-arrow connector-arrow-styled"><i class="fas fa-arrow-down"></i></div>
-                        <div class="connector-line w-0.5 h-6"></div> 
+                        <div class="connector-line w-0.5 h-6"></div>
                         <div class="connector-line h-0.5 w-full max-w-2xl my-[-1px] relative z-0"></div> <div class="flex w-full max-w-2xl"> <div class="w-1/2 flex flex-col items-center">
                                 <div class="connector-line w-0.5 h-6"></div>
                                 <div class="connector-arrow connector-arrow-styled"><i class="fas fa-arrow-down"></i></div>
@@ -75,8 +75,7 @@ The old town bell rings, signaling the start of a busy market. Stalls come alive
                         <h3 class="flowchart-step-title"><i class="fas fa-sitemap mr-2"></i>3. Internal Processing Steps</h3>
                     </div>
                     <div class="flex flex-col md:flex-row justify-around items-stretch md:space-x-6 space-y-6 md:space-y-0">
-                        <div class="flowchart-block flowchart-block-process md:w-2/5">
-                            <h4 class="flowchart-title mb-2"><i class="fas fa-globe-americas mr-2"></i>Figure A: Global Alignment (GAS)</h4>
+                        <div class="flowchart-block flowchart-block-process md:w-2/5 relative"> <h4 class="flowchart-title mb-2"><i class="fas fa-globe-americas mr-2"></i>Figure A: Global Alignment (GAS)</h4>
                             <figure class="video-figure-container">
                                 <div class="video-placeholder">
                                     <video autoplay muted loop playsinline>
@@ -86,13 +85,46 @@ The old town bell rings, signaling the start of a busy market. Stalls come alive
                                 </div>
                             </figure>
                             <figcaption class="video-caption">Overall thematic similarity using full-text embeddings. Corresponds to Equation (1) in the paper.</figcaption>
+                            
+                            <div class="hidden md:block absolute z-10 pointer-events-none"
+                                 style="top: 50%; left: 0; /* Origin: Mid-left of Figure A block */
+                                        transform: translateY(-50%); /* Vertically center origin */
+                                        width: 1px; height: 1px; /* Small base for positioning children */
+                                        ">
+                                <div class="absolute connector-line h-0.5 bg-teal-300"
+                                     style="top: 0px; /* Aligns with origin's y */
+                                            right: 0px; /* Starts at origin's x, extends left */
+                                            width: 5.2rem; /* Length of H1 */
+                                            ">
+                                </div>
+                                <div class="absolute connector-line w-0.5 bg-teal-300"
+                                     style="top: 0px; /* Aligns with origin's y */
+                                            right: 5.2rem; /* Positioned at the left end of H1 (width of H1) */
+                                            height: 94rem; /* Length of V1 (long drop to reach GAS connector level) */
+                                            ">
+                                </div>
+                                <div class="absolute connector-line h-0.5 bg-teal-300"
+                                     style="top: 94rem; /* Aligns with bottom of V1 (must match V1 height) */
+                                            left: -5.3rem; 
+                                            width: 14.2rem; /* Length of H2 to reach under GAS connector's column */
+                                            ">
+                                    <div class="absolute"
+                                         style="top: 50%; left: 100%; /* Position at right end of H2 */
+                                                transform: translate(-50%, -50%); /* Center arrowhead on the line end */
+                                                ">
+                                        <div class="connector-arrow-styled bg-teal-100 p-1">
+                                            <i class="fas fa-arrow-right text-md text-teal-600"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                         <div class="flowchart-block flowchart-block-process md:w-2/5">
                             <h4 class="flowchart-title mb-2"><i class="fas fa-tasks mr-2"></i>Figure B: Preprocessing & Segmentation</h4>
                              <figure class="video-figure-container">
                                 <div class="video-placeholder">
                                     <video autoplay muted loop playsinline>
-                                        <source src="videos/segmenting/segmenting.mp4" type="video/mp4"> 
+                                        <source src="videos/segmenting/segmenting.mp4" type="video/mp4">
                                         Your browser does not support the video tag.
                                     </video>
                                 </div>
@@ -107,7 +139,7 @@ The old town bell rings, signaling the start of a busy market. Stalls come alive
                         </div>
                         <div class="connector-line h-0.5 w-1/2 md:w-1/4 my-[-1px] relative z-0"></div> <div class="connector-line w-0.5 h-6 relative z-0"></div> <div class="connector-arrow connector-arrow-styled"><i class="fas fa-arrow-down"></i></div>
                     </div>
-
+                    
                     <div class="text-center">
                         <h3 class="flowchart-step-title"><i class="fas fa-chalkboard-teacher mr-2"></i>4. Conceptual Detour: Mapping Windows (MW)</h3>
                         <p class="text-slate-600 text-sm mb-4">Understanding how VCS aligns text segments of varying lengths and details. (Ref: Section 3.2.2)</p>
@@ -119,7 +151,7 @@ The old town bell rings, signaling the start of a busy market. Stalls come alive
                                 <figure class="video-figure-container">
                                     <div class="video-placeholder">
                                         <video autoplay muted loop playsinline>
-                                            <source src="videos/mapping window/case1.mp4" type="video/mp4"> 
+                                            <source src="videos/mapping window/case1.mp4" type="video/mp4">
                                             Your browser does not support the video tag.
                                         </video>
                                     </div>
@@ -131,7 +163,7 @@ The old town bell rings, signaling the start of a busy market. Stalls come alive
                                 <figure class="video-figure-container">
                                     <div class="video-placeholder">
                                         <video autoplay muted loop playsinline>
-                                            <source src="videos/mapping window/case2.mp4" type="video/mp4"> 
+                                            <source src="videos/mapping window/case2.mp4" type="video/mp4">
                                             Your browser does not support the video tag.
                                         </video>
                                     </div>
@@ -143,7 +175,7 @@ The old town bell rings, signaling the start of a busy market. Stalls come alive
                                  <figure class="video-figure-container">
                                     <div class="video-placeholder">
                                         <video autoplay muted loop playsinline>
-                                            <source src="videos/mapping window/case3.mp4" type="video/mp4"> 
+                                            <source src="videos/mapping window/case3.mp4" type="video/mp4">
                                             Your browser does not support the video tag.
                                         </video>
                                     </div>
@@ -152,7 +184,7 @@ The old town bell rings, signaling the start of a busy market. Stalls come alive
                             </div>
                         </div>
                     </div>
-                    
+
                     <div class="connector-wrapper flex flex-col items-center">
                         <div class="connector-line w-0.5 h-6"></div>
                         <div class="connector-arrow connector-arrow-styled"><i class="fas fa-arrow-down"></i></div>
@@ -161,14 +193,14 @@ The old town bell rings, signaling the start of a busy market. Stalls come alive
                     <div class="text-center">
                         <h3 class="flowchart-step-title"><i class="fas fa-calculator mr-2"></i>5. Core Score Calculation Components</h3>
                     </div>
-                    
+
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-x-6 gap-y-6 md:items-start">
                         <div class="flowchart-block flowchart-block-process">
                             <h4 class="flowchart-title mb-2"><i class="fas fa-people-arrows mr-2"></i>Figure D: Best Matching</h4>
                             <figure class="video-figure-container">
                                 <div class="video-placeholder">
                                     <video autoplay muted loop playsinline>
-                                        <source src="videos/best matching/matching.mp4" type="video/mp4"> 
+                                        <source src="videos/best matching/matching.mp4" type="video/mp4">
                                         Your browser does not support the video tag.
                                     </video>
                                 </div>
@@ -180,7 +212,7 @@ The old town bell rings, signaling the start of a busy market. Stalls come alive
                             <figure class="video-figure-container">
                                 <div class="video-placeholder">
                                     <video autoplay muted loop playsinline>
-                                        <source src="videos/metrics/las/las.mp4" type="video/mp4"> 
+                                        <source src="videos/metrics/las/las.mp4" type="video/mp4">
                                         Your browser does not support the video tag.
                                     </video>
                                 </div>
@@ -192,7 +224,7 @@ The old town bell rings, signaling the start of a busy market. Stalls come alive
                             <figure class="video-figure-container">
                                 <div class="video-placeholder">
                                     <video autoplay muted loop playsinline>
-                                        <source src="videos/metrics/nas/nas-d/nas-d.mp4" type="video/mp4"> 
+                                        <source src="videos/metrics/nas/nas-d/nas-d.mp4" type="video/mp4">
                                         Your browser does not support the video tag.
                                     </video>
                                 </div>
@@ -202,35 +234,32 @@ The old town bell rings, signaling the start of a busy market. Stalls come alive
                     </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-x-6 mt-1 mb-1">
-                        <div class="flex justify-center">
-                            <div class="connector-wrapper !my-2"> <div class="connector-line w-0.5 h-6"></div>
+                        <div class="flex justify-center"> <div class="connector-wrapper !my-2 relative"> <div class="connector-line w-0.5 h-6"></div>
                                 <div class="connector-arrow connector-arrow-styled"><i class="fas fa-arrow-down"></i></div>
+                                <span class="absolute top-1/2 -translate-y-1/2 left-full ml-2 text-sm font-bold text-teal-700 whitespace-nowrap">GAS</span>
                             </div>
                         </div>
-                        <div class="flex justify-center">
-                            <div class="connector-wrapper !my-2"> <div class="connector-line w-0.5 h-6"></div>
+                        <div class="flex justify-center"> <div class="connector-wrapper !my-2 relative"> <div class="connector-line w-0.5 h-6"></div>
                                 <div class="connector-arrow connector-arrow-styled"><i class="fas fa-arrow-down"></i></div>
+                                <span class="absolute top-1/2 -translate-y-1/2 left-full ml-2 text-sm font-bold text-teal-700 whitespace-nowrap">LAS</span>
                             </div>
                         </div>
-                        <div class="flex justify-center">
-                            <div class="connector-wrapper !my-2"> <div class="connector-line w-0.5 h-6"></div>
+                        <div class="flex justify-center"> <div class="connector-wrapper !my-2"> <div class="connector-line w-0.5 h-6"></div>
                                 <div class="connector-arrow connector-arrow-styled"><i class="fas fa-arrow-down"></i></div>
-                            </div>
+                                </div>
                         </div>
                     </div>
-
+                    
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-x-6 md:items-stretch">
                         <div class="md:col-span-2 flowchart-block flowchart-block-process flex flex-col">
                             <h4 class="flowchart-title mb-2"><i class="fas fa-video mr-2"></i>Figure I: Final VCS Score Video</h4>
-                            <figure class="video-figure-container flex-grow">
-                                <div class="video-placeholder h-full">
-                                    <video autoplay muted loop playsinline>
-                                        <source src="videos/vcs/vcs.mp4" type="video/mp4"> 
+                            <figure class="video-figure-container flex-grow flex items-center justify-center">
+                                <div class="video-placeholder"> <video autoplay muted loop playsinline class="block max-w-full object-contain rounded-lg shadow-lg"> <source src="videos/vcs/vcs.mp4" type="video/mp4">
                                         Your browser does not support the video tag.
                                     </video>
                                 </div>
                             </figure>
-                            <figcaption class="video-caption">This video illustrates the final score calculation, combining semantic and narrative alignments to provide a comprehensive measure of video understanding. It shows how GAS, LAS, and NAS contribute to the overall VCS.</figcaption>
+                            <figcaption class="video-caption mt-4">This video illustrates the final score calculation, combining semantic and narrative alignments to provide a comprehensive measure of video understanding. It shows how GAS, LAS, and NAS contribute to the overall VCS.</figcaption>
                         </div>
 
                         <div class="space-y-0 flex flex-col justify-between">
@@ -239,42 +268,69 @@ The old town bell rings, signaling the start of a busy market. Stalls come alive
                                 <figure class="video-figure-container">
                                     <div class="video-placeholder">
                                         <video autoplay muted loop playsinline>
-                                            <source src="videos/metrics/nas/nas-l/nas-l.mp4" type="video/mp4"> 
+                                            <source src="videos/metrics/nas/nas-l/nas-l.mp4" type="video/mp4">
                                             Your browser does not support the video tag.
                                         </video>
                                     </div>
                                 </figure>
                                 <figcaption class="video-caption">Evaluates local chronological flow of matched elements. (Ref: Eq. 5, 6)</figcaption>
                             </div>
-                            <div class="connector-wrapper flex flex-col items-center nas-vertical-connector my-2"> 
+                            
+                            <div class="connector-wrapper flex flex-col items-center nas-vertical-connector my-2">
                                 <div class="connector-line w-0.5 h-6"></div>
                                 <div class="connector-arrow connector-arrow-styled"><i class="fas fa-arrow-down"></i></div>
                             </div>
-                            <div class="flowchart-block flowchart-block-process flowchart-block-nas-vertical">
+                            
+                            <div class="flowchart-block flowchart-block-process flowchart-block-nas-vertical relative">
                                 <h4 class="flowchart-title mb-2"><i class="fas fa-window-maximize mr-2"></i>Figure H: Window Regularizer (R<sub>W</sub>)</h4>
                                 <figure class="video-figure-container">
                                     <div class="video-placeholder">
                                         <video autoplay muted loop playsinline>
-                                            <source src="videos/metrics/nas/window-regularizer/Rw.mp4" type="video/mp4"> 
+                                            <source src="videos/metrics/nas/window-regularizer/Rw.mp4" type="video/mp4">
                                             Your browser does not support the video tag.
                                         </video>
                                     </div>
                                 </figure>
                                 <figcaption class="video-caption">Adjusts NAS for extreme text length disparities. (Ref: Eq. 8, 9)</figcaption>
+                                
+                                <div class="hidden md:block absolute z-10"
+                                     style="top: 100%; /* Start at bottom edge of Figure H */
+                                            left: 50%; 
+                                            transform: translateX(-50%); /* Horizontally center under Figure H */
+                                            ">
+                                    <div class="relative connector-line w-0.5 bg-teal-300"
+                                         style="height: 3rem; /* Length of the initial downward segment */
+                                                ">
+                                        <div class="absolute connector-line h-0.5 bg-teal-300"
+                                             style="top: 100%; /* Start at bottom of V1_down */
+                                                    right: 0%; /* Extend left from V1_down's right edge (its center) */
+                                                    width: 45rem; /* Length of the horizontal segment */
+                                                    ">
+                                            <div class="absolute"
+                                                 style="bottom: 0%; /* Bottom aligns with H_left's y-level */
+                                                        right: 100%; /* Right edge aligns with H_left's left end */
+                                                        height: 1rem; /* Total height of the upward segment + arrowhead */
+                                                        display: flex;
+                                                        flex-direction: column-reverse; /* Arrowhead on top */
+                                                        align-items: center;
+                                                        ">
+                                                <div class="connector-arrow-styled bg-teal-100 p-1.5">
+                                                    <i class="fas fa-arrow-up text-xl text-teal-600"></i>
+                                                </div>
+                                                <div class="connector-line w-0.5 bg-teal-300 flex-grow"></div>
+                                            </div>
+                                            <span class="absolute text-sm font-bold text-teal-700 whitespace-nowrap"
+                                                  style="bottom: 0.2rem; /* Vertically align with the V_up segment */
+                                                         right: calc(100% + -3rem); /* Position to the left of the V_up segment */
+                                                         transform: translateY(-50%); /* Fine-tune vertical centering of text */
+                                                        ">NAS</span>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
-
-                    <div class="connector-wrapper flex justify-center mt-8">
-                        <div class="connector-arrow-styled bg-slate-200 shadow">
-                            <i class="fas fa-ellipsis-h text-slate-500"></i> 
-                        </div>
-                    </div>
-                    <div class="text-center">
-                        <h3 class="flowchart-step-title"><i class="fas fa-trophy mr-2"></i>6. Final Score Aggregation...</h3>
-                         <p class="text-slate-500 italic pb-4">(Combining SAS and NAS<sub>reg</sub> for the final VCS score.)</p>
-                    </div>
-                </div> 
+                </div>
             </section>
         </div>
     </article>
